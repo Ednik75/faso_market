@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+backend/database/*.db
+backend/database/*.db-wal
+backend/database/*.db-shm
+backend/uploads/*
+backend/.env
+.env
+.git
+.claude
+*.pdf
+*.md

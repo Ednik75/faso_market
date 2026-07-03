@@ -1,0 +1,22 @@
+# Dépendances
+node_modules/
+
+# Secrets — NE JAMAIS COMMITER
+.env
+backend/.env
+
+# Base de données locale et fichiers uploadés
+backend/database/*.db
+backend/database/*.db-wal
+backend/database/*.db-shm
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Builds
+frontend/dist/
+backend/public/
+
+# Divers
+*.log
+.DS_Store
+.claude/

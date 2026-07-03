@@ -1,0 +1,30 @@
+# Blueprint Render.com — Market BF (plan GRATUIT)
+# Sur https://dashboard.render.com : New → Blueprint → sélectionnez ce dépôt.
+services:
+  - type: web
+    name: marketbf
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: JWT_SECRET
+        generateValue: true          # généré automatiquement par Render
+      - key: GOOGLE_CLIENT_ID
+        sync: false                  # à renseigner dans le dashboard Render
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SECURE
+        value: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false

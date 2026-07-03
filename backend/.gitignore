@@ -1,0 +1,5 @@
+node_modules/
+database/lebian.db
+.env
+uploads/*
+!uploads/.gitkeep
