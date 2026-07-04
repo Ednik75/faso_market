@@ -11,12 +11,12 @@ L'application est déployée en « tout-en-un » : un seul service gratuit qui s
 | Limite | Conséquence |
 |---|---|
 | Le service s'endort après 15 min sans visite | Le premier chargement prend ~1 minute, ensuite c'est rapide |
-| Disque non persistant | Les **images uploadées** sont perdues au redémarrage. La **base de données**, elle, est conservée grâce à Turso (voir Étape 2) |
+| Disque non persistant | Sans conséquence : la **base de données** est sur Turso et les **images uploadées** sur Cloudinary (voir Étapes 2 et 4) |
 | 750 h/mois | Largement suffisant pour un seul service |
 
-👉 Grâce à Turso (base SQLite hébergée, gratuite), **les comptes, boutiques,
-produits et commandes sont conservés** même quand Render redémarre le service.
-Seules les images uploadées restent éphémères sur le plan gratuit.
+👉 Grâce à Turso (base SQLite hébergée, gratuite) et Cloudinary (stockage
+d'images, gratuit), **tout est conservé** — comptes, boutiques, produits,
+commandes et photos — même quand Render redémarre le service.
 
 ---
 
@@ -82,6 +82,7 @@ les variables marquées « à renseigner » (reprenez les valeurs de votre `back
 |---|---|
 | `TURSO_DATABASE_URL` | l'URL `libsql://marketbf-xxxx.turso.io` (Étape 2) |
 | `TURSO_AUTH_TOKEN` | le token `eyJ...` (Étape 2) |
+| `CLOUDINARY_URL` | la valeur `cloudinary://...` : compte gratuit sur https://cloudinary.com, puis dashboard → **API Keys** → « API environment variable » |
 | `GOOGLE_CLIENT_ID` | votre ID `xxxx.apps.googleusercontent.com` |
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_USER` | votre adresse Gmail |
@@ -134,14 +135,14 @@ Pour éviter l'endormissement pendant une soutenance, ouvrez le site 2 minutes
 avant, ou utilisez un service de ping gratuit (ex : https://uptimerobot.com,
 ping toutes les 10 min sur `/api/health`).
 
-## Plus tard : conserver aussi les images uploadées
+## Où vivent les données ?
 
-Les données (comptes, boutiques, commandes…) sont déjà persistantes grâce à
-Turso. Seules les **images uploadées** disparaissent au redémarrage sur le plan
-gratuit Render. Options quand ce sera gênant :
-1. **Cloudinary** (gratuit, 25 Go) : stockage d'images externe — demande une
-   petite adaptation du code d'upload
-2. **Disque persistant Render** (~7 $/mois, plan Starter)
-3. **Petit VPS** (Hetzner, Contabo… ~5 €/mois) avec le `docker-compose.yml` du
-   projet : `docker-compose up -d --build` (volumes persistants pour les images ;
-   la base peut rester sur Turso ou revenir en fichier local)
+| Donnée | Stockage | Persistant ? |
+|---|---|---|
+| Comptes, boutiques, produits, commandes, avis | Turso (`TURSO_DATABASE_URL`) | ✅ Oui |
+| Images uploadées (photos produits, logos) | Cloudinary (`CLOUDINARY_URL`) | ✅ Oui |
+| En développement local (variables vides) | Fichier SQLite + dossier `backend/uploads/` | ✅ Sur votre machine |
+
+Si un jour vous quittez Render pour un VPS (~5 €/mois), le `docker-compose.yml`
+du projet fonctionne tel quel — gardez simplement les mêmes variables
+d'environnement.

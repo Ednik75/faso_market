@@ -18,6 +18,8 @@ services:
         sync: false                  # URL libsql://... de votre base Turso (données persistantes)
       - key: TURSO_AUTH_TOKEN
         sync: false                  # token créé avec : turso db tokens create marketbf
+      - key: CLOUDINARY_URL
+        sync: false                  # cloudinary://... (dashboard cloudinary.com → API Keys) — images persistantes
       - key: GOOGLE_CLIENT_ID
         sync: false                  # à renseigner dans le dashboard Render
       - key: SMTP_HOST

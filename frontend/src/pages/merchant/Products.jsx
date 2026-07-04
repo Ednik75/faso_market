@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 const CATEGORIES = ['Alimentation', 'Céréales', 'Huiles', 'Boissons', 'Mode & Vêtements', 'Robes', 'Chaussures', 'Accessoires', 'Électronique', 'Général']
 
 function ImagePicker({ value, onChange }) {
-  const [mode, setMode]           = useState(value?.startsWith('/uploads') ? 'file' : 'url')
+  const [mode, setMode]           = useState(value?.startsWith('/uploads') || value?.includes('res.cloudinary.com') ? 'file' : 'url')
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview]     = useState(value || '')
   const fileRef = useRef()
