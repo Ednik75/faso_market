@@ -1,24 +1,99 @@
-const Database = require('better-sqlite3');
+const { createClient } = require('@libsql/client');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'marketbf.db');
+// Turso (production) si TURSO_DATABASE_URL est défini, sinon fichier SQLite local (développement)
+const DB_URL = process.env.TURSO_DATABASE_URL || `file:${path.join(__dirname, 'marketbf.db')}`;
+const IS_LOCAL_FILE = DB_URL.startsWith('file:');
 
-let db;
+const client = createClient({
+  url: DB_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN || undefined,
+});
 
-function getDb() {
-  if (!db) {
-    db = new Database(DB_PATH);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-  }
-  return db;
+function rowToObject(columns, row) {
+  const obj = {};
+  for (let i = 0; i < columns.length; i++) obj[columns[i]] = row[i];
+  return obj;
 }
 
-function initDb() {
-  const db = getDb();
+function toRunResult(rs) {
+  return {
+    changes: rs.rowsAffected,
+    lastInsertRowid: rs.lastInsertRowid != null ? Number(rs.lastInsertRowid) : undefined,
+  };
+}
 
-  db.exec(`
+/* ── API asynchrone ──────────────────────────────────────────
+   db.all(sql, [params])  → toutes les lignes (objets)
+   db.get(sql, [params])  → première ligne ou undefined
+   db.run(sql, [params])  → { changes, lastInsertRowid }
+   db.batch([{sql,args}]) → plusieurs écritures atomiques
+   db.transaction(fn)     → transaction interactive : fn reçoit
+                            un handle {get,all,run} et peut lire
+                            entre les écritures ; rollback si erreur */
+const db = {
+  async all(sql, params = []) {
+    const rs = await client.execute({ sql, args: params });
+    return rs.rows.map((r) => rowToObject(rs.columns, r));
+  },
+
+  async get(sql, params = []) {
+    const rs = await client.execute({ sql, args: params });
+    return rs.rows.length ? rowToObject(rs.columns, rs.rows[0]) : undefined;
+  },
+
+  async run(sql, params = []) {
+    const rs = await client.execute({ sql, args: params });
+    return toRunResult(rs);
+  },
+
+  async batch(statements) {
+    return client.batch(
+      statements.map(({ sql, args }) => ({ sql, args: args || [] })),
+      'write'
+    );
+  },
+
+  async transaction(fn) {
+    const tx = await client.transaction('write');
+    const handle = {
+      async all(sql, params = []) {
+        const rs = await tx.execute({ sql, args: params });
+        return rs.rows.map((r) => rowToObject(rs.columns, r));
+      },
+      async get(sql, params = []) {
+        const rs = await tx.execute({ sql, args: params });
+        return rs.rows.length ? rowToObject(rs.columns, rs.rows[0]) : undefined;
+      },
+      async run(sql, params = []) {
+        const rs = await tx.execute({ sql, args: params });
+        return toRunResult(rs);
+      },
+    };
+    try {
+      const result = await fn(handle);
+      await tx.commit();
+      return result;
+    } catch (err) {
+      try { await tx.rollback(); } catch { /* déjà fermée */ }
+      throw err;
+    } finally {
+      tx.close();
+    }
+  },
+};
+
+async function initDb() {
+  if (IS_LOCAL_FILE) {
+    // Pragmas utiles uniquement en mode fichier local (Turso les gère côté serveur)
+    try {
+      await client.execute('PRAGMA journal_mode = WAL');
+      await client.execute('PRAGMA foreign_keys = ON');
+    } catch { /* non bloquant */ }
+  }
+
+  await client.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -26,6 +101,7 @@ function initDb() {
       password_hash TEXT NOT NULL,
       role TEXT NOT NULL CHECK(role IN ('client','merchant','admin')),
       phone TEXT,
+      google_id TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -122,81 +198,77 @@ function initDb() {
       used_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
   `);
 
-  runMigrations(db);
-  seedData(db);
-  return db;
+  await runMigrations();
+  await seedData();
 }
 
-// Migrations idempotentes pour les bases existantes
-function runMigrations(db) {
-  const userCols = db.prepare('PRAGMA table_info(users)').all().map((c) => c.name);
-  if (!userCols.includes('google_id')) {
-    db.exec('ALTER TABLE users ADD COLUMN google_id TEXT');
-    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL');
-  }
-
-  const orderCols = db.prepare('PRAGMA table_info(orders)').all().map((c) => c.name);
-  if (!orderCols.includes('delivery_address')) {
-    db.exec('ALTER TABLE orders ADD COLUMN delivery_address TEXT');
-    db.exec('ALTER TABLE orders ADD COLUMN delivery_latitude REAL');
-    db.exec('ALTER TABLE orders ADD COLUMN delivery_longitude REAL');
-  }
+// Migrations idempotentes pour les bases créées avec un ancien schéma
+async function runMigrations() {
+  const addColumn = async (sql) => {
+    try {
+      await client.execute(sql);
+    } catch (err) {
+      if (!/duplicate column/i.test(String(err.message))) throw err;
+    }
+  };
+  await addColumn('ALTER TABLE users ADD COLUMN google_id TEXT');
+  await addColumn('ALTER TABLE orders ADD COLUMN delivery_address TEXT');
+  await addColumn('ALTER TABLE orders ADD COLUMN delivery_latitude REAL');
+  await addColumn('ALTER TABLE orders ADD COLUMN delivery_longitude REAL');
 }
 
-function seedData(db) {
-  const existing = db.prepare('SELECT COUNT(*) as count FROM users').get();
+async function seedData() {
+  const existing = await db.get('SELECT COUNT(*) as count FROM users');
   if (existing.count > 0) return;
 
   const hash = (pwd) => bcrypt.hashSync(pwd, 10);
 
-  const insertUser = db.prepare(
-    'INSERT INTO users (name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)'
-  );
+  const insertUser = (name, email, pwd, role, phone) =>
+    db.run('INSERT INTO users (name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)',
+      [name, email, hash(pwd), role, phone]);
 
   // Utilisateurs avec numéros Burkina Faso (+226)
-  const adminId = insertUser.run('Admin Market BF', 'admin@marketbf.com', hash('Admin123!'), 'admin', '+22620000000').lastInsertRowid;
-  const m1Id = insertUser.run('Ouédraogo Issouf', 'merchant1@marketbf.com', hash('Merchant1!'), 'merchant', '+22670111111').lastInsertRowid;
-  const m2Id = insertUser.run('Compaoré Aminata', 'merchant2@marketbf.com', hash('Merchant2!'), 'merchant', '+22675222222').lastInsertRowid;
-  const c1Id = insertUser.run('Sawadogo Mamadou', 'client@marketbf.com', hash('Client123!'), 'client', '+22660333333').lastInsertRowid;
-  insertUser.run('Traoré Rasmata', 'client2@marketbf.com', hash('Client123!'), 'client', '+22665444444');
+  await insertUser('Admin Market BF', 'admin@marketbf.com', 'Admin123!', 'admin', '+22620000000');
+  const m1Id = (await insertUser('Ouédraogo Issouf', 'merchant1@marketbf.com', 'Merchant1!', 'merchant', '+22670111111')).lastInsertRowid;
+  const m2Id = (await insertUser('Compaoré Aminata', 'merchant2@marketbf.com', 'Merchant2!', 'merchant', '+22675222222')).lastInsertRowid;
+  const c1Id = (await insertUser('Sawadogo Mamadou', 'client@marketbf.com', 'Client123!', 'client', '+22660333333')).lastInsertRowid;
+  await insertUser('Traoré Rasmata', 'client2@marketbf.com', 'Client123!', 'client', '+22665444444');
 
-  const insertShop = db.prepare(
-    'INSERT INTO shops (owner_id, name, description, address, latitude, longitude, category, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-  );
+  const insertShop = (ownerId, name, desc, address, lat, lng, cat, status) =>
+    db.run('INSERT INTO shops (owner_id, name, description, address, latitude, longitude, category, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [ownerId, name, desc, address, lat, lng, cat, status]);
 
   // Boutiques à Ouagadougou
-  const shop1Id = insertShop.run(
+  const shop1Id = (await insertShop(
     m1Id,
     'Épicerie Wend-Kuni',
     'Épicerie traditionnelle burkinabè - produits locaux de qualité',
     'Secteur 15, Hamdallaye, Ouagadougou',
     12.3712, -1.5148,
     'Alimentation', 'active'
-  ).lastInsertRowid;
+  )).lastInsertRowid;
 
-  const shop2Id = insertShop.run(
+  const shop2Id = (await insertShop(
     m2Id,
     'Boutique Laafi Mode',
     'Vêtements et pagnes traditionnels du Burkina Faso',
     'Avenue Kwame N\'Krumah, Ouaga 2000, Ouagadougou',
     12.3350, -1.5210,
     'Mode & Vêtements', 'active'
-  ).lastInsertRowid;
+  )).lastInsertRowid;
 
   // Boutique en attente de validation
-  insertShop.run(
+  await insertShop(
     m2Id,
     'Pharma Naturelle BF',
     'Produits naturels et plantes médicinales du Sahel',
     'Marché de Zogona, Ouagadougou',
     12.3815, -1.5062,
     'Santé & Beauté', 'pending'
-  );
-
-  const insertProduct = db.prepare(
-    'INSERT INTO products (shop_id, name, description, price, category, image_url, is_available) VALUES (?, ?, ?, ?, ?, ?, ?)'
   );
 
   // Produits typiques du Burkina Faso - Épicerie
@@ -221,41 +293,29 @@ function seedData(db) {
     ['Chapeau de paille traditionnel', 'Chapeau tressé à la main, protection solaire naturelle',        2500,  'Accessoires',     'https://picsum.photos/seed/chapeau-paille/400/400'],
   ];
 
-  const insertStock = db.prepare(
-    'INSERT INTO stock (product_id, quantity, low_stock_threshold) VALUES (?, ?, ?)'
-  );
-  const insertMovement = db.prepare(
-    'INSERT INTO stock_movements (product_id, type, quantity, note) VALUES (?, ?, ?, ?)'
-  );
+  const seedProducts = async (shopId, products, stockQtys, threshold, exitNote) => {
+    for (let i = 0; i < products.length; i++) {
+      const [name, desc, price, cat, imageUrl] = products[i];
+      const pid = (await db.run(
+        'INSERT INTO products (shop_id, name, description, price, category, image_url, is_available) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [shopId, name, desc, price, cat, imageUrl, 1]
+      )).lastInsertRowid;
+      const qty = stockQtys[i];
+      const exitQty = exitNote.qty;
+      await db.batch([
+        { sql: 'INSERT INTO stock (product_id, quantity, low_stock_threshold) VALUES (?, ?, ?)', args: [pid, qty, threshold] },
+        { sql: 'INSERT INTO stock_movements (product_id, type, quantity, note) VALUES (?, ?, ?, ?)', args: [pid, 'entry', qty + exitQty, 'Stock initial'] },
+        { sql: 'INSERT INTO stock_movements (product_id, type, quantity, note) VALUES (?, ?, ?, ?)', args: [pid, 'exit', exitQty, exitNote.label] },
+      ]);
+    }
+  };
 
-  const stockQtys1 = [50, 40, 4, 25, 35, 30, 45, 3];
-  products1.forEach(([name, desc, price, cat, imageUrl], i) => {
-    const pid = insertProduct.run(shop1Id, name, desc, price, cat, imageUrl, 1).lastInsertRowid;
-    const qty = stockQtys1[i];
-    insertStock.run(pid, qty, 5);
-    insertMovement.run(pid, 'entry', qty + 10, 'Stock initial');
-    insertMovement.run(pid, 'exit', 10, 'Ventes de la semaine');
-  });
-
-  const stockQtys2 = [6, 3, 8, 4, 10, 15];
-  products2.forEach(([name, desc, price, cat, imageUrl], i) => {
-    const pid = insertProduct.run(shop2Id, name, desc, price, cat, imageUrl, 1).lastInsertRowid;
-    const qty = stockQtys2[i];
-    insertStock.run(pid, qty, 4);
-    insertMovement.run(pid, 'entry', qty + 5, 'Stock initial');
-    insertMovement.run(pid, 'exit', 5, 'Ventes');
-  });
+  await seedProducts(shop1Id, products1, [50, 40, 4, 25, 35, 30, 45, 3], 5, { qty: 10, label: 'Ventes de la semaine' });
+  await seedProducts(shop2Id, products2, [6, 3, 8, 4, 10, 15], 4, { qty: 5, label: 'Ventes' });
 
   // Commandes de démonstration
-  const allProducts = db.prepare('SELECT id, price FROM products WHERE shop_id = ?').all(shop1Id);
+  const allProducts = await db.all('SELECT id, price FROM products WHERE shop_id = ?', [shop1Id]);
   if (allProducts.length > 0) {
-    const insertOrder = db.prepare(
-      'INSERT INTO orders (client_id, shop_id, status, payment_method, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?)'
-    );
-    const insertItem = db.prepare(
-      'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)'
-    );
-
     const ordersData = [
       { status: 'delivered', method: 'orange_money', amount: 5000 },
       { status: 'delivered', method: 'moov_money', amount: 7200 },
@@ -263,22 +323,26 @@ function seedData(db) {
       { status: 'pending', method: 'orange_money', amount: 3800 },
     ];
 
-    ordersData.forEach(({ status, method, amount }, i) => {
-      const oid = insertOrder.run(c1Id, shop1Id, status, method, amount, null).lastInsertRowid;
+    for (let i = 0; i < ordersData.length; i++) {
+      const { status, method, amount } = ordersData[i];
+      const oid = (await db.run(
+        'INSERT INTO orders (client_id, shop_id, status, payment_method, total_amount, notes) VALUES (?, ?, ?, ?, ?, ?)',
+        [c1Id, shop1Id, status, method, amount, null]
+      )).lastInsertRowid;
       const p = allProducts[i % allProducts.length];
-      insertItem.run(oid, p.id, 1, p.price);
-      db.prepare('INSERT INTO payments (order_id, amount, method, status) VALUES (?, ?, ?, ?)').run(
-        oid, amount, method, status === 'delivered' ? 'completed' : 'pending'
-      );
-    });
+      await db.batch([
+        { sql: 'INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)', args: [oid, p.id, 1, p.price] },
+        { sql: 'INSERT INTO payments (order_id, amount, method, status) VALUES (?, ?, ?, ?)', args: [oid, amount, method, status === 'delivered' ? 'completed' : 'pending'] },
+      ]);
+    }
   }
 
   // Avis
-  db.prepare('INSERT INTO reviews (client_id, shop_id, rating, comment) VALUES (?, ?, ?, ?)')
-    .run(c1Id, shop1Id, 5, 'Excellent ! Produits locaux de très bonne qualité. Le mil est frais et le beurre de karité est pur. Je recommande vivement !');
+  await db.run('INSERT INTO reviews (client_id, shop_id, rating, comment) VALUES (?, ?, ?, ?)',
+    [c1Id, shop1Id, 5, 'Excellent ! Produits locaux de très bonne qualité. Le mil est frais et le beurre de karité est pur. Je recommande vivement !']);
 
-  db.prepare('INSERT INTO reviews (client_id, shop_id, rating, comment) VALUES (?, ?, ?, ?)')
-    .run(c1Id, shop2Id, 4, 'Belle sélection de pagnes et boubous. Le bazin est de bonne qualité. Livraison rapide à Ouagadougou.');
+  await db.run('INSERT INTO reviews (client_id, shop_id, rating, comment) VALUES (?, ?, ?, ?)',
+    [c1Id, shop2Id, 4, 'Belle sélection de pagnes et boubous. Le bazin est de bonne qualité. Livraison rapide à Ouagadougou.']);
 
   console.log('✅ Base de données Market BF initialisée (contexte Burkina Faso)');
   console.log('   Admin:       admin@marketbf.com      / Admin123!');
@@ -287,4 +351,4 @@ function seedData(db) {
   console.log('   Client:      client@marketbf.com     / Client123!');
 }
 
-module.exports = { getDb, initDb };
+module.exports = { db, initDb };

@@ -1,22 +1,22 @@
 const express = require('express');
-const { getDb } = require('../database/db');
+const { db } = require('../database/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
 // GET /api/stats/overview
-router.get('/overview', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const shop = db.prepare('SELECT id FROM shops WHERE owner_id = ?').get(req.user.id);
+router.get('/overview', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const shop = await db.get('SELECT id FROM shops WHERE owner_id = ?', [req.user.id]);
   if (!shop) return res.json({ total_orders: 0, total_revenue: 0, product_count: 0, low_stock_count: 0 });
 
-  const orders = db.prepare("SELECT COUNT(*) as count, COALESCE(SUM(total_amount),0) as revenue FROM orders WHERE shop_id = ? AND status != 'cancelled'").get(shop.id);
-  const products = db.prepare('SELECT COUNT(*) as count FROM products WHERE shop_id = ?').get(shop.id);
-  const lowStock = db.prepare(`
+  const orders = await db.get("SELECT COUNT(*) as count, COALESCE(SUM(total_amount),0) as revenue FROM orders WHERE shop_id = ? AND status != 'cancelled'", [shop.id]);
+  const products = await db.get('SELECT COUNT(*) as count FROM products WHERE shop_id = ?', [shop.id]);
+  const lowStock = await db.get(`
     SELECT COUNT(*) as count FROM products p JOIN stock s ON s.product_id=p.id
     WHERE p.shop_id = ? AND s.quantity <= s.low_stock_threshold
-  `).get(shop.id);
-  const pendingOrders = db.prepare("SELECT COUNT(*) as count FROM orders WHERE shop_id=? AND status IN ('pending','confirmed')").get(shop.id);
+  `, [shop.id]);
+  const pendingOrders = await db.get("SELECT COUNT(*) as count FROM orders WHERE shop_id=? AND status IN ('pending','confirmed')", [shop.id]);
 
   res.json({
     total_orders: orders.count,
@@ -25,33 +25,31 @@ router.get('/overview', authMiddleware, requireRole('merchant'), (req, res) => {
     low_stock_count: lowStock.count,
     pending_orders: pendingOrders.count,
   });
-});
+}));
 
 // GET /api/stats/sales - daily revenue last 30 days
-router.get('/sales', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const shop = db.prepare('SELECT id FROM shops WHERE owner_id = ?').get(req.user.id);
+router.get('/sales', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const shop = await db.get('SELECT id FROM shops WHERE owner_id = ?', [req.user.id]);
   if (!shop) return res.json([]);
 
-  const sales = db.prepare(`
+  const sales = await db.all(`
     SELECT DATE(created_at) as date, COUNT(*) as orders, SUM(total_amount) as revenue
     FROM orders
     WHERE shop_id = ? AND status != 'cancelled'
       AND created_at >= DATE('now', '-30 days')
     GROUP BY DATE(created_at)
     ORDER BY date ASC
-  `).all(shop.id);
+  `, [shop.id]);
 
   res.json(sales);
-});
+}));
 
 // GET /api/stats/products - top selling products
-router.get('/products', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const shop = db.prepare('SELECT id FROM shops WHERE owner_id = ?').get(req.user.id);
+router.get('/products', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const shop = await db.get('SELECT id FROM shops WHERE owner_id = ?', [req.user.id]);
   if (!shop) return res.json([]);
 
-  const top = db.prepare(`
+  const top = await db.all(`
     SELECT p.id, p.name, p.category,
       SUM(oi.quantity) as units_sold,
       SUM(oi.quantity * oi.unit_price) as revenue
@@ -62,9 +60,9 @@ router.get('/products', authMiddleware, requireRole('merchant'), (req, res) => {
     GROUP BY p.id
     ORDER BY units_sold DESC
     LIMIT 10
-  `).all(shop.id);
+  `, [shop.id]);
 
   res.json(top);
-});
+}));
 
 module.exports = router;

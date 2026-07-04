@@ -10,9 +10,6 @@ const { initDb } = require('./database/db');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Init DB
-initDb();
-
 /* ── Sécurité ───────────────────────────────────────────────── */
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -101,7 +98,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Erreur interne du serveur' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Market BF API démarrée sur http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health\n`);
-});
+// Init DB (Turso si TURSO_DATABASE_URL est défini, sinon fichier local) puis démarrage
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Market BF API démarrée sur http://localhost:${PORT}`);
+      console.log(`📊 Health check: http://localhost:${PORT}/api/health\n`);
+    });
+  })
+  .catch((err) => {
+    console.error('❌ Impossible d\'initialiser la base de données :', err.message);
+    process.exit(1);
+  });

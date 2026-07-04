@@ -4,8 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const { OAuth2Client } = require('google-auth-library');
-const { getDb } = require('../database/db');
+const { db } = require('../database/db');
 const { authMiddleware, JWT_SECRET } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 const { sendPasswordResetEmail } = require('../utils/mailer');
 
 const router = express.Router();
@@ -52,23 +53,23 @@ router.post(
     body('role').isIn(['client', 'merchant']).withMessage('Rôle invalide'),
     body('phone').optional({ values: 'falsy' }).trim().matches(/^\+?[0-9 ]{8,20}$/).withMessage('Numéro de téléphone invalide'),
   ],
-  (req, res) => {
+  asyncHandler(async (req, res) => {
     if (!handleValidation(req, res)) return;
     const { name, email, password, role, phone } = req.body;
 
-    const db = getDb();
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const existing = await db.get('SELECT id FROM users WHERE email = ?', [email]);
     if (existing) {
       return res.status(409).json({ error: 'Cet email est déjà utilisé' });
     }
     const password_hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
-    const result = db.prepare(
-      'INSERT INTO users (name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)'
-    ).run(name, email, password_hash, role, phone || null);
+    const result = await db.run(
+      'INSERT INTO users (name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)',
+      [name, email, password_hash, role, phone || null]
+    );
 
-    const user = db.prepare('SELECT id, name, email, role, phone FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const user = await db.get('SELECT id, name, email, role, phone FROM users WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(issueToken(user));
-  }
+  })
 );
 
 /* ── Connexion ──────────────────────────────────────────────── */
@@ -78,29 +79,28 @@ router.post(
     body('email').trim().isEmail().withMessage('Email et mot de passe requis').normalizeEmail(),
     body('password').isString().notEmpty().withMessage('Email et mot de passe requis').isLength({ max: 128 }),
   ],
-  (req, res) => {
+  asyncHandler(async (req, res) => {
     if (!handleValidation(req, res)) return;
     const { email, password } = req.body;
 
-    const db = getDb();
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
 
     // Comparaison systématique pour un temps de réponse constant
     const hashToCheck = user && user.password_hash ? user.password_hash : DUMMY_HASH;
     const valid = bcrypt.compareSync(password, hashToCheck);
 
     if (!user || !valid) {
+      if (user && !user.password_hash && user.google_id) {
+        return res.status(401).json({ error: 'Ce compte utilise la connexion Google. Cliquez sur « Continuer avec Google ».' });
+      }
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
-    if (!user.password_hash && user.google_id) {
-      return res.status(401).json({ error: 'Ce compte utilise la connexion Google. Cliquez sur « Continuer avec Google ».' });
-    }
     res.json(issueToken(user));
-  }
+  })
 );
 
 /* ── Connexion Google ───────────────────────────────────────── */
-router.post('/google', async (req, res) => {
+router.post('/google', asyncHandler(async (req, res) => {
   if (!googleClient) {
     return res.status(503).json({ error: 'La connexion Google n\'est pas configurée sur ce serveur' });
   }
@@ -121,36 +121,35 @@ router.post('/google', async (req, res) => {
     return res.status(401).json({ error: 'Email Google non vérifié' });
   }
 
-  const db = getDb();
   const email = payload.email.toLowerCase();
-  let user = db.prepare('SELECT * FROM users WHERE google_id = ? OR email = ?').get(payload.sub, email);
+  let user = await db.get('SELECT * FROM users WHERE google_id = ? OR email = ?', [payload.sub, email]);
 
   if (user) {
     // Lier le compte Google si l'utilisateur existait déjà via email/mot de passe
     if (!user.google_id) {
-      db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(payload.sub, user.id);
+      await db.run('UPDATE users SET google_id = ? WHERE id = ?', [payload.sub, user.id]);
     }
   } else {
     const newRole = ['client', 'merchant'].includes(role) ? role : 'client';
-    const result = db.prepare(
-      'INSERT INTO users (name, email, password_hash, role, phone, google_id) VALUES (?, ?, ?, ?, ?, ?)'
-    ).run(payload.name || email.split('@')[0], email, '', newRole, null, payload.sub);
-    user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const result = await db.run(
+      'INSERT INTO users (name, email, password_hash, role, phone, google_id) VALUES (?, ?, ?, ?, ?, ?)',
+      [payload.name || email.split('@')[0], email, '', newRole, null, payload.sub]
+    );
+    user = await db.get('SELECT * FROM users WHERE id = ?', [result.lastInsertRowid]);
   }
 
   res.json(issueToken(user));
-});
+}));
 
 /* ── Mot de passe oublié ────────────────────────────────────── */
 router.post(
   '/forgot-password',
   [body('email').trim().isEmail().withMessage('Adresse email invalide').normalizeEmail()],
-  (req, res) => {
+  asyncHandler(async (req, res) => {
     if (!handleValidation(req, res)) return;
     const { email } = req.body;
 
-    const db = getDb();
-    const user = db.prepare('SELECT id, name, email, google_id, password_hash FROM users WHERE email = ?').get(email);
+    const user = await db.get('SELECT id, name, email, google_id, password_hash FROM users WHERE email = ?', [email]);
 
     // Réponse identique que l'email existe ou non (anti-énumération de comptes)
     const genericResponse = { message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' };
@@ -158,16 +157,16 @@ router.post(
     if (user) {
       const token = crypto.randomBytes(32).toString('hex');
       const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-      db.prepare('DELETE FROM password_reset_tokens WHERE user_id = ?').run(user.id);
-      db.prepare(
-        "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, DATETIME('now', '+1 hour'))"
-      ).run(user.id, tokenHash);
+      await db.batch([
+        { sql: 'DELETE FROM password_reset_tokens WHERE user_id = ?', args: [user.id] },
+        { sql: "INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES (?, ?, DATETIME('now', '+1 hour'))", args: [user.id, tokenHash] },
+      ]);
       // Envoi asynchrone : ne bloque pas la réponse
       sendPasswordResetEmail(user.email, user.name, token);
     }
 
     res.json(genericResponse);
-  }
+  })
 );
 
 /* ── Réinitialisation du mot de passe ───────────────────────── */
@@ -177,37 +176,35 @@ router.post(
     body('token').isString().isLength({ min: 64, max: 64 }).withMessage('Lien de réinitialisation invalide'),
     passwordRules,
   ],
-  (req, res) => {
+  asyncHandler(async (req, res) => {
     if (!handleValidation(req, res)) return;
     const { token, password } = req.body;
 
-    const db = getDb();
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const record = db.prepare(`
+    const record = await db.get(`
       SELECT * FROM password_reset_tokens
       WHERE token_hash = ? AND used_at IS NULL AND expires_at > DATETIME('now')
-    `).get(tokenHash);
+    `, [tokenHash]);
 
     if (!record) {
       return res.status(400).json({ error: 'Lien de réinitialisation invalide ou expiré. Refaites une demande.' });
     }
 
     const password_hash = bcrypt.hashSync(password, BCRYPT_ROUNDS);
-    db.transaction(() => {
-      db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(password_hash, record.user_id);
-      db.prepare("UPDATE password_reset_tokens SET used_at = DATETIME('now') WHERE id = ?").run(record.id);
-    })();
+    await db.batch([
+      { sql: 'UPDATE users SET password_hash = ? WHERE id = ?', args: [password_hash, record.user_id] },
+      { sql: "UPDATE password_reset_tokens SET used_at = DATETIME('now') WHERE id = ?", args: [record.id] },
+    ]);
 
     res.json({ message: 'Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter.' });
-  }
+  })
 );
 
 /* ── Profil courant ─────────────────────────────────────────── */
-router.get('/me', authMiddleware, (req, res) => {
-  const db = getDb();
-  const user = db.prepare('SELECT id, name, email, role, phone, created_at FROM users WHERE id = ?').get(req.user.id);
+router.get('/me', authMiddleware, asyncHandler(async (req, res) => {
+  const user = await db.get('SELECT id, name, email, role, phone, created_at FROM users WHERE id = ?', [req.user.id]);
   if (!user) return res.status(404).json({ error: 'Utilisateur non trouvé' });
   res.json(user);
-});
+}));
 
 module.exports = router;

@@ -1,13 +1,13 @@
 const express = require('express');
-const { getDb } = require('../database/db');
+const { db } = require('../database/db');
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const { asyncHandler } = require('../middleware/asyncHandler');
 
 const router = express.Router();
 
 // GET /api/products - search products
-router.get('/', (req, res) => {
+router.get('/', asyncHandler(async (req, res) => {
   const { search, category, shop_id, min_price, max_price } = req.query;
-  const db = getDb();
 
   let sql = `
     SELECT p.*, s.quantity as stock_quantity, s.low_stock_threshold,
@@ -31,44 +31,42 @@ router.get('/', (req, res) => {
 
   sql += ` ORDER BY p.created_at DESC`;
 
-  res.json(db.prepare(sql).all(...params));
-});
+  res.json(await db.all(sql, params));
+}));
 
 // GET /api/products/merchant/mine - all products of merchant's shop
-router.get('/merchant/mine', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const shop = db.prepare('SELECT id FROM shops WHERE owner_id = ?').get(req.user.id);
+router.get('/merchant/mine', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const shop = await db.get('SELECT id FROM shops WHERE owner_id = ?', [req.user.id]);
   if (!shop) return res.status(404).json({ error: 'Boutique introuvable' });
 
-  const products = db.prepare(`
+  const products = await db.all(`
     SELECT p.*, s.quantity as stock_quantity, s.low_stock_threshold
     FROM products p
     LEFT JOIN stock s ON s.product_id = p.id
     WHERE p.shop_id = ?
     ORDER BY p.created_at DESC
-  `).all(shop.id);
+  `, [shop.id]);
 
   res.json(products);
-});
+}));
 
 // GET /api/products/:id
-router.get('/:id', (req, res) => {
-  const db = getDb();
-  const product = db.prepare(`
+router.get('/:id', asyncHandler(async (req, res) => {
+  const product = await db.get(`
     SELECT p.*, s.quantity as stock_quantity, s.low_stock_threshold,
       sh.name as shop_name, sh.id as shop_id, sh.address as shop_address
     FROM products p
     JOIN shops sh ON sh.id = p.shop_id
     LEFT JOIN stock s ON s.product_id = p.id
     WHERE p.id = ?
-  `).get(req.params.id);
+  `, [req.params.id]);
 
   if (!product) return res.status(404).json({ error: 'Produit introuvable' });
   res.json(product);
-});
+}));
 
 // POST /api/products - create product (merchant)
-router.post('/', authMiddleware, requireRole('merchant'), (req, res) => {
+router.post('/', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
   const { name, description, price, category, image_url } = req.body;
   if (!name || price == null) return res.status(400).json({ error: 'Nom et prix requis' });
   const priceNum = parseFloat(price);
@@ -77,28 +75,27 @@ router.post('/', authMiddleware, requireRole('merchant'), (req, res) => {
   }
   if (String(name).length > 200) return res.status(400).json({ error: 'Nom trop long' });
 
-  const db = getDb();
-  const shop = db.prepare('SELECT id FROM shops WHERE owner_id = ?').get(req.user.id);
+  const shop = await db.get('SELECT id FROM shops WHERE owner_id = ?', [req.user.id]);
   if (!shop) return res.status(400).json({ error: 'Créez une boutique avant d\'ajouter des produits' });
 
-  const result = db.prepare(
-    'INSERT INTO products (shop_id, name, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(shop.id, name, description || null, priceNum, category || 'Général', image_url || null);
+  const result = await db.run(
+    'INSERT INTO products (shop_id, name, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+    [shop.id, name, description || null, priceNum, category || 'Général', image_url || null]
+  );
 
-  db.prepare('INSERT INTO stock (product_id, quantity, low_stock_threshold) VALUES (?, 0, 5)').run(result.lastInsertRowid);
+  await db.run('INSERT INTO stock (product_id, quantity, low_stock_threshold) VALUES (?, 0, 5)', [result.lastInsertRowid]);
 
-  const product = db.prepare(`
+  const product = await db.get(`
     SELECT p.*, s.quantity as stock_quantity, s.low_stock_threshold
     FROM products p LEFT JOIN stock s ON s.product_id = p.id WHERE p.id = ?
-  `).get(result.lastInsertRowid);
+  `, [result.lastInsertRowid]);
 
   res.status(201).json(product);
-});
+}));
 
 // PUT /api/products/:id
-router.put('/:id', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const product = db.prepare('SELECT p.*, sh.owner_id FROM products p JOIN shops sh ON sh.id=p.shop_id WHERE p.id=?').get(req.params.id);
+router.put('/:id', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const product = await db.get('SELECT p.*, sh.owner_id FROM products p JOIN shops sh ON sh.id=p.shop_id WHERE p.id=?', [req.params.id]);
   if (!product) return res.status(404).json({ error: 'Produit introuvable' });
   if (product.owner_id !== req.user.id) return res.status(403).json({ error: 'Accès refusé' });
 
@@ -109,42 +106,40 @@ router.put('/:id', authMiddleware, requireRole('merchant'), (req, res) => {
       return res.status(400).json({ error: 'Prix invalide' });
     }
   }
-  db.prepare(`
+  await db.run(`
     UPDATE products SET name=?, description=?, price=?, category=?, image_url=?, is_available=? WHERE id=?
-  `).run(
+  `, [
     name ?? product.name,
     description ?? product.description,
     price != null ? parseFloat(price) : product.price,
     category ?? product.category,
     image_url ?? product.image_url,
     is_available != null ? (is_available ? 1 : 0) : product.is_available,
-    req.params.id
-  );
+    req.params.id,
+  ]);
 
-  const updated = db.prepare(`
+  const updated = await db.get(`
     SELECT p.*, s.quantity as stock_quantity, s.low_stock_threshold
     FROM products p LEFT JOIN stock s ON s.product_id = p.id WHERE p.id = ?
-  `).get(req.params.id);
+  `, [req.params.id]);
 
   res.json(updated);
-});
+}));
 
 // DELETE /api/products/:id
-router.delete('/:id', authMiddleware, requireRole('merchant'), (req, res) => {
-  const db = getDb();
-  const product = db.prepare('SELECT p.*, sh.owner_id FROM products p JOIN shops sh ON sh.id=p.shop_id WHERE p.id=?').get(req.params.id);
+router.delete('/:id', authMiddleware, requireRole('merchant'), asyncHandler(async (req, res) => {
+  const product = await db.get('SELECT p.*, sh.owner_id FROM products p JOIN shops sh ON sh.id=p.shop_id WHERE p.id=?', [req.params.id]);
   if (!product) return res.status(404).json({ error: 'Produit introuvable' });
   if (product.owner_id !== req.user.id) return res.status(403).json({ error: 'Accès refusé' });
 
-  db.prepare('DELETE FROM products WHERE id = ?').run(req.params.id);
+  await db.run('DELETE FROM products WHERE id = ?', [req.params.id]);
   res.json({ message: 'Produit supprimé' });
-});
+}));
 
 // GET /api/products/categories/list
-router.get('/categories/list', (req, res) => {
-  const db = getDb();
-  const cats = db.prepare('SELECT DISTINCT category FROM products ORDER BY category').all();
+router.get('/categories/list', asyncHandler(async (req, res) => {
+  const cats = await db.all('SELECT DISTINCT category FROM products ORDER BY category');
   res.json(cats.map((c) => c.category));
-});
+}));
 
 module.exports = router;

@@ -14,6 +14,10 @@ services:
         value: 5000
       - key: JWT_SECRET
         generateValue: true          # généré automatiquement par Render
+      - key: TURSO_DATABASE_URL
+        sync: false                  # URL libsql://... de votre base Turso (données persistantes)
+      - key: TURSO_AUTH_TOKEN
+        sync: false                  # token créé avec : turso db tokens create marketbf
       - key: GOOGLE_CLIENT_ID
         sync: false                  # à renseigner dans le dashboard Render
       - key: SMTP_HOST

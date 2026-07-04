@@ -16,11 +16,10 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 
-# Dépendances natives pour better-sqlite3
-RUN apk add --no-cache python3 make g++ wget
+RUN apk add --no-cache wget
 
 COPY backend/package*.json ./
-RUN npm ci --omit=dev && apk del python3 make g++
+RUN npm ci --omit=dev
 
 COPY backend/ ./
 COPY --from=frontend-builder /app/dist ./public
