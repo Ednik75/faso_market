@@ -2,14 +2,18 @@
 
 Marketplace locale pour le Burkina Faso — une plateforme qui connecte les commerçants de Ouagadougou (et environs) à leurs clients : catalogue produits, commandes, gestion de stock, statistiques de vente et validation des boutiques par un administrateur.
 
+**🌍 Démo en ligne : https://marketbf.onrender.com** *(hébergement gratuit Render : le premier chargement peut prendre ~1 minute si le service était endormi)*
+
 ## Sommaire
 
 - [Fonctionnalités](#fonctionnalités)
+- [Sécurité](#sécurité)
 - [Stack technique](#stack-technique)
 - [Architecture du projet](#architecture-du-projet)
 - [Modèle de données](#modèle-de-données)
 - [Démarrage rapide](#démarrage-rapide)
 - [Démarrage avec Docker](#démarrage-avec-docker)
+- [Déploiement en production](#déploiement-en-production)
 - [Variables d'environnement](#variables-denvironnement)
 - [Comptes de démonstration](#comptes-de-démonstration)
 - [API — vue d'ensemble](#api--vue-densemble)
@@ -49,7 +53,7 @@ Le projet gère trois rôles distincts, chacun avec son propre espace :
 
 - **Helmet** : en-têtes HTTP de sécurité (XSS, sniffing, clickjacking…)
 - **Rate limiting** : 300 requêtes / 15 min par IP en global, 20 tentatives / 15 min sur les routes d'authentification (anti brute-force)
-- **CORS restreint** aux origines autorisées (`CORS_ORIGINS`)
+- **CORS restreint** aux origines autorisées (`CORS_ORIGINS`, + URL publique Render détectée automatiquement)
 - **JWT signé HS256** avec secret fort obligatoire en production (le serveur refuse de démarrer sinon)
 - **Mots de passe** : bcrypt (12 rounds), politique de 8 caractères minimum avec lettres et chiffres
 - **Anti-énumération de comptes** : réponse identique que l'email existe ou non (mot de passe oublié), comparaison bcrypt systématique (temps constant)
@@ -63,9 +67,16 @@ Le projet gère trois rôles distincts, chacun avec son propre espace :
 
 | Côté | Technologies |
 |---|---|
-| **Backend** | Node.js, Express, better-sqlite3 (SQLite), JWT (`jsonwebtoken`), `bcryptjs`, `express-validator`, `multer` (upload d'images) |
+| **Backend** | Node.js, Express, `@libsql/client` (Turso en production / fichier SQLite en local), JWT (`jsonwebtoken`), `bcryptjs`, `express-validator`, `helmet`, `express-rate-limit`, `multer` + **Cloudinary** (images), `nodemailer` (emails), `google-auth-library` (connexion Google) |
 | **Frontend** | React 18, Vite, React Router, Tailwind CSS, Axios, Leaflet / React-Leaflet (carte), Recharts (graphiques), Lucide React (icônes), React Hot Toast |
-| **Infra** | Docker (backend Node + frontend Nginx), Docker Compose, volume persistant pour la base SQLite |
+| **Infra** | Docker (image « tout-en-un » : l'API Express sert aussi le build React), Docker Compose (variante 2 services), Render.com (hébergement), Turso (base de données), Cloudinary (stockage d'images) |
+
+### Persistance des données
+
+- **Base de données** : `@libsql/client` se connecte à **Turso** (SQLite hébergé, gratuit) si `TURSO_DATABASE_URL` est défini, sinon à un fichier SQLite local (`backend/database/marketbf.db`) — idéal en développement.
+- **Images uploadées** : envoyées sur **Cloudinary** si `CLOUDINARY_URL` est défini, sinon stockées sur le disque local (`backend/uploads/`).
+
+Ce double mode permet à l'application de survivre au disque éphémère du plan gratuit de Render : données et photos sont conservées entre les redémarrages.
 
 ## Architecture du projet
 
@@ -73,11 +84,12 @@ Le projet gère trois rôles distincts, chacun avec son propre espace :
 projet_lebian/
 ├── backend/
 │   ├── database/
-│   │   └── db.js              # Connexion SQLite, schéma, seed de données de démo
+│   │   └── db.js              # Client libSQL (Turso ou fichier local), schéma, seed de démo
 │   ├── middleware/
-│   │   └── auth.js            # Vérification JWT + contrôle des rôles
+│   │   ├── auth.js            # Vérification JWT + contrôle des rôles
+│   │   └── asyncHandler.js    # Gestion centralisée des erreurs async
 │   ├── routes/
-│   │   ├── auth.js            # Inscription / connexion / profil
+│   │   ├── auth.js            # Inscription / connexion / Google / mot de passe oublié
 │   │   ├── shops.js           # Boutiques
 │   │   ├── products.js        # Produits
 │   │   ├── stock.js           # Gestion des stocks
@@ -85,10 +97,13 @@ projet_lebian/
 │   │   ├── reviews.js         # Avis clients
 │   │   ├── stats.js           # Statistiques commerçant
 │   │   ├── admin.js           # Administration
-│   │   └── upload.js          # Upload d'images produits/boutiques
-│   ├── uploads/                # Fichiers uploadés (images)
+│   │   └── upload.js          # Upload d'images (Cloudinary ou disque local)
+│   ├── utils/
+│   │   └── mailer.js          # Envoi d'emails (SMTP ou simulation console)
+│   ├── uploads/                # Images uploadées (mode local uniquement)
+│   ├── public/                 # Build frontend servi par l'API (créé par le Dockerfile)
 │   ├── server.js               # Point d'entrée Express
-│   └── Dockerfile
+│   └── Dockerfile              # Image backend seule (pour docker-compose)
 ├── frontend/
 │   ├── src/
 │   │   ├── api/axios.js        # Instance Axios configurée (base URL, token)
@@ -98,16 +113,18 @@ projet_lebian/
 │   │       ├── client/         # Catalogue, panier, commandes, carte des boutiques...
 │   │       ├── merchant/       # Dashboard, produits, stock, commandes, stats
 │   │       └── admin/          # Dashboard, validation boutiques, utilisateurs
-│   ├── nginx.conf              # Config Nginx pour servir le build en production
-│   └── Dockerfile
+│   ├── nginx.conf              # Config Nginx (variante docker-compose)
+│   └── Dockerfile              # Image frontend Nginx (pour docker-compose)
+├── Dockerfile                  # Image de production « tout-en-un » (utilisée par Render)
+├── render.yaml                 # Blueprint de déploiement Render.com
+├── DEPLOIEMENT.md              # Guide pas-à-pas : Render + Turso + Cloudinary
 ├── docker-compose.yml
-├── start.sh                    # Script de démarrage local (backend + frontend)
-└── Cahier_des_charges_application_commerce.pdf
+└── start.sh                    # Script de démarrage local (backend + frontend)
 ```
 
 ## Modèle de données
 
-Base SQLite avec les tables suivantes (voir `backend/database/db.js`) :
+Base SQLite/libSQL avec les tables suivantes (voir `backend/database/db.js`) :
 
 - **users** — clients, commerçants, admins (`role`: `client` \| `merchant` \| `admin`)
 - **shops** — boutiques, géolocalisées (latitude/longitude), statut `pending` \| `active` \| `rejected`
@@ -165,17 +182,40 @@ Accès :
 - API Backend : http://localhost:5000
 - Health check : http://localhost:5000/api/health
 
+En local, aucune configuration Turso ou Cloudinary n'est nécessaire : la base est un fichier SQLite et les images vont sur le disque.
+
 ## Démarrage avec Docker
 
+Deux options :
+
+**Image « tout-en-un »** (celle utilisée en production) — l'API sert aussi le frontend, une seule URL :
+
 ```bash
-docker-compose up --build
+docker build -t marketbf .
+docker run -p 5000:5000 -e JWT_SECRET=$(openssl rand -hex 48) marketbf
+# → http://localhost:5000 (site + API)
+```
+
+**Docker Compose** (backend + frontend Nginx séparés) :
+
+```bash
+JWT_SECRET=$(openssl rand -hex 48) docker-compose up --build
 ```
 
 - Frontend (Nginx) : http://localhost:3000
 - Backend (API) : http://localhost:5000
-- La base SQLite est persistée dans le volume Docker `marketbf_db`
+- Base SQLite persistée dans le volume `marketbf_db`, images dans `marketbf_uploads`
+- Toutes les variables optionnelles (Turso, Cloudinary, SMTP, Google…) peuvent être passées en variables d'environnement
 
-Le mot de passe JWT de production peut être surchargé via la variable d'environnement `JWT_SECRET` avant de lancer `docker-compose up`.
+## Déploiement en production
+
+L'application est déployée sur **Render.com** (plan gratuit) en mode « tout-en-un » : un seul service Docker sert l'API et le site sur la même URL.
+
+- **Blueprint** : `render.yaml` (New → Blueprint sur le dashboard Render)
+- **Base de données** : [Turso](https://turso.tech) (SQLite hébergé, gratuit) via `TURSO_DATABASE_URL` + `TURSO_AUTH_TOKEN`
+- **Images** : [Cloudinary](https://cloudinary.com) (gratuit) via `CLOUDINARY_URL`
+
+👉 Le guide complet pas-à-pas (création des comptes Turso/Cloudinary, configuration Render, limites du plan gratuit) est dans **[DEPLOIEMENT.md](DEPLOIEMENT.md)**.
 
 ## Variables d'environnement
 
@@ -186,6 +226,9 @@ Le mot de passe JWT de production peut être surchargé via la variable d'enviro
 | `PORT` | Port d'écoute de l'API | `5000` |
 | `JWT_SECRET` | Secret de signature des tokens JWT (**32 caractères minimum**, obligatoire en production — `openssl rand -hex 48`) | *(à changer en production)* |
 | `NODE_ENV` | Environnement (`development` / `production`) | `development` |
+| `TURSO_DATABASE_URL` | URL `libsql://…` de la base Turso (production) | *(si vide, fichier SQLite local)* |
+| `TURSO_AUTH_TOKEN` | Token d'accès Turso (`turso db tokens create <base>`) | — |
+| `CLOUDINARY_URL` | URL `cloudinary://…` pour le stockage des images (production) | *(si vide, disque local)* |
 | `FRONTEND_URL` | URL du frontend, utilisée dans les liens des emails | `http://localhost:3000` |
 | `CORS_ORIGINS` | Origines autorisées (séparées par des virgules) | localhost 3000/4173/5173 |
 | `GOOGLE_CLIENT_ID` | Client ID OAuth Google pour « Continuer avec Google » | *(désactivé si vide)* |
@@ -196,7 +239,7 @@ Le mot de passe JWT de production peut être surchargé via la variable d'enviro
 
 1. Créez un projet sur [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Créez un identifiant **OAuth 2.0 → Application Web**
-3. Ajoutez `http://localhost:3000` aux **Origines JavaScript autorisées**
+3. Ajoutez `http://localhost:3000` (et l'URL de production) aux **Origines JavaScript autorisées**
 4. Copiez le Client ID dans `GOOGLE_CLIENT_ID` du fichier `backend/.env` et redémarrez le backend
 
 Le bouton « Continuer avec Google » apparaît automatiquement sur les pages de connexion et d'inscription dès que la variable est renseignée.
@@ -217,7 +260,7 @@ Sans configuration SMTP, les emails sont affichés dans la console du backend (p
 
 | Variable | Description |
 |---|---|
-| `VITE_API_URL` | URL de base de l'API backend (utilisée au build, notamment via Docker) |
+| `VITE_API_URL` | URL de base de l'API backend (utilisée au build ; inutile en mode « tout-en-un » où API et site partagent la même URL) |
 
 ## Comptes de démonstration
 
@@ -242,7 +285,7 @@ Toutes les routes sont préfixées par `/api`. Les routes protégées nécessite
 | `reviews` | `GET /shop/:shopId`, `POST /` (client), `DELETE /:id` |
 | `stats` | `GET /overview`, `GET /sales`, `GET /products` (commerçant) |
 | `admin` | `GET /shops`, `PUT /shops/:id/validate`, `GET /users`, `DELETE /users/:id`, `GET /stats` |
-| `upload` | `POST /` (upload d'image, authentifié) |
+| `upload` | `POST /` (upload d'image, authentifié — Cloudinary ou disque local) |
 
 Health check : `GET /api/health`
 
