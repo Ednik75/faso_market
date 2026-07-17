@@ -49,7 +49,7 @@ export default function ClientDashboard() {
           <div className="relative z-10">
             <p className="text-white/60 text-sm font-display mb-1">🇧🇫 Market BF</p>
             <h1 className="font-display font-black text-3xl text-white mb-2">
-              {greeting}, <span className="text-gradient-gold">{user.name.split(' ')[0]}</span> 👋
+              {greeting}, <span className="text-gradient-gold">{user.name.split(' ')[0]}</span>
             </h1>
             <p className="text-white/60 text-sm">Que cherchez-vous aujourd'hui sur le marché burkinabè ?</p>
 

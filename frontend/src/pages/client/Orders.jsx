@@ -21,7 +21,7 @@ const PAYMENT_LABEL = {
   orange_money:    'Orange Money',
   moov_money:      'Moov Money',
   wave:            'Wave',
-  cash_on_delivery:'💵 À la livraison',
+  cash_on_delivery:'Cash à la livraison',
 }
 
 export default function ClientOrders() {
