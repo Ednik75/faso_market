@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../api/axios'
-import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowRight, MapPin, Phone, MessageSquare, LocateFixed, Loader2, X, CheckCircle2, HandCoins } from 'lucide-react'
+import { ShoppingCart, Trash2, Plus, Minus, CreditCard, ArrowRight, MapPin, Phone, MessageSquare, LocateFixed, Loader2, X, CheckCircle2 } from 'lucide-react'
 import { getCurrentPosition, BF_CITIES, OUAGA_QUARTIERS } from '../../utils/geo'
 import toast from 'react-hot-toast'
 
@@ -11,7 +11,7 @@ const PAYMENT_METHODS = [
   { value: 'orange_money',    label: 'Orange Money',            logo: '/orange.png',  needsPhone: true },
   { value: 'moov_money',      label: 'Moov Money',              logo: '/moov.png',    needsPhone: true },
   { value: 'wave',            label: 'Wave',                    logo: '/wave.png',    needsPhone: true },
-  { value: 'cash_on_delivery',label: 'Paiement à la livraison', icon: HandCoins,      needsPhone: false },
+  { value: 'cash_on_delivery',label: 'Paiement à la livraison', emoji: '💵',          needsPhone: false },
 ]
 
 export default function Cart() {
@@ -157,7 +157,7 @@ export default function Cart() {
             <CreditCard className="w-5 h-5 text-forest-600" /> Méthode de paiement
           </h3>
           <div className="grid grid-cols-2 gap-2">
-            {PAYMENT_METHODS.map(({ value, label, logo, icon: Icon }) => (
+            {PAYMENT_METHODS.map(({ value, label, logo, emoji }) => (
               <button key={value} type="button" onClick={() => setPaymentMethod(value)}
                 className={`p-3.5 rounded-xl border-2 text-left transition-all ${
                   paymentMethod === value
@@ -167,7 +167,7 @@ export default function Cart() {
                 <div className="h-8 flex items-center mb-2">
                   {logo
                     ? <img src={logo} alt={label} className="h-7 w-auto object-contain" />
-                    : <Icon className="w-7 h-7 text-forest-600" />
+                    : <span className="text-2xl">{emoji}</span>
                   }
                 </div>
                 <p className={`font-semibold text-sm font-display ${paymentMethod === value ? 'text-forest-700' : 'text-stone-700'}`}>

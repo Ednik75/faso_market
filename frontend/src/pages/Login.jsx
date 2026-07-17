@@ -31,7 +31,7 @@ export default function Login() {
     setLoading(true)
     try {
       const user = await login(form.email, form.password)
-      toast.success(`Bienvenue, ${user.name.split(' ')[0]} !`)
+      toast.success(`Bienvenue, ${user.name.split(' ')[0]} ! 👋`)
       navigate(`/${user.role}/dashboard`)
     } catch (err) {
       setError(err.response?.data?.error || 'Connexion impossible. Vérifiez votre connexion internet et réessayez.')
@@ -120,7 +120,7 @@ export default function Login() {
             </span>
           </Link>
 
-          <h1 className="font-display font-bold text-3xl text-stone-900 mb-1.5">Bon retour !</h1>
+          <h1 className="font-display font-bold text-3xl text-stone-900 mb-1.5">Bon retour ! 👋</h1>
           <p className="text-stone-500 mb-6">Connectez-vous pour accéder à votre espace</p>
 
           <div className="card !shadow-glass-md">

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '../components/Navbar'
 import api from '../api/axios'
-import { Store, Search, MapPin, ShoppingCart, TrendingUp, Shield, Smartphone, ArrowRight, Package, Star, HandCoins } from 'lucide-react'
+import { Store, Search, MapPin, ShoppingCart, TrendingUp, Shield, Smartphone, ArrowRight, Package, Star } from 'lucide-react'
 
 const FEATURES = [
   { icon: Search,       title: 'Recherche intelligente', desc: 'Trouvez mil, karité, bogolan ou pagne bazin dans toutes les boutiques de Ouagadougou.', color: 'bg-forest-600', bg: 'bg-forest-50' },
@@ -17,7 +17,7 @@ const PAYMENTS = [
   { logo: '/orange.png', name: 'Orange Money',    sub: 'Très populaire' },
   { logo: '/moov.png',   name: 'Moov Money',      sub: 'Rapide & fiable' },
   { logo: '/wave.png',   name: 'Wave',            sub: 'Sans frais' },
-  { icon: HandCoins,     name: 'À la livraison',  sub: 'Paiement cash' },
+  { emoji: '💵',         name: 'À la livraison',  sub: 'Paiement cash' },
 ]
 
 const TICKER = ['🌾 Mil & Sorgho', '🫒 Karité pur', '🌿 Soumbala', '🫘 Niébé', '🧵 Bogolan', '👘 Pagne bazin', '👞 Sandales cuir', '🌻 Huile de coton', '🍚 Fonio bio', '🎩 Chapeau paille', '👗 Boubou', '🌱 Produits naturels']
@@ -295,12 +295,12 @@ export default function Home() {
           <p className="text-forest-600 font-semibold text-sm uppercase tracking-widest font-display mb-3">Paiements adaptés</p>
           <h3 className="section-title text-3xl mb-12">Méthodes de paiement au Burkina</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {PAYMENTS.map(({ logo, icon: Icon, name, sub }) => (
+            {PAYMENTS.map(({ logo, emoji, name, sub }) => (
               <div key={name} className="card-hover flex flex-col items-center gap-4 py-8">
                 <div className="h-12 flex items-center justify-center">
                   {logo
                     ? <img src={logo} alt={name} className="h-12 w-auto object-contain" />
-                    : <Icon className="w-10 h-10 text-forest-600" />
+                    : <span className="text-4xl">{emoji}</span>
                   }
                 </div>
                 <div className="text-center">

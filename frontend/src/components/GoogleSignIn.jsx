@@ -50,7 +50,7 @@ export default function GoogleSignIn({ role }) {
           callback: async (response) => {
             try {
               const user = await loginWithGoogle(response.credential, roleRef.current)
-              toast.success(`Bienvenue, ${user.name.split(' ')[0]} !`)
+              toast.success(`Bienvenue, ${user.name.split(' ')[0]} ! 👋`)
               navigate(`/${user.role}/dashboard`)
             } catch (err) {
               toast.error(err.response?.data?.error || 'Échec de la connexion Google')
