@@ -1,18 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
+import ProductCard from '../../components/ProductCard'
+import { PositionChip, RadiusFilter } from '../../components/LocationBar'
+import { usePosition } from '../../contexts/PositionContext'
+import { sortByDistance } from '../../utils/geo'
 import api from '../../api/axios'
-import { useAuth } from '../../contexts/AuthContext'
-import { Search, ShoppingCart, ChevronRight, Package, LayoutGrid, Wheat, Shirt, Sparkles, ShoppingBag } from 'lucide-react'
+import { Search, Package, LayoutGrid, Wheat, Shirt, Sparkles, ShoppingBag, X } from 'lucide-react'
 import toast from 'react-hot-toast'
-import CategoryIcon from '../../components/CategoryIcon'
 
 const CATEGORIES = [
-  { key: 'all',        label: 'Tous',               icon: LayoutGrid },
-  { key: 'food',       label: 'Alimentation',        icon: Wheat },
-  { key: 'fashion',   label: 'Mode & Vêtements',    icon: Shirt },
-  { key: 'health',    label: 'Santé & Beauté',       icon: Sparkles },
-  { key: 'other',     label: 'Autre',                icon: Package },
+  { key: 'all',     label: 'Tous',             icon: LayoutGrid },
+  { key: 'food',    label: 'Alimentation',     icon: Wheat },
+  { key: 'fashion', label: 'Mode & Vêtements', icon: Shirt },
+  { key: 'health',  label: 'Santé & Beauté',   icon: Sparkles },
+  { key: 'other',   label: 'Autre',            icon: Package },
 ]
 
 const FOOD_CATS    = ['Céréales', 'Légumineuses', 'Huiles', 'Épices & Condiments', 'Boissons', 'Alimentation']
@@ -26,69 +28,22 @@ function getCategoryKey(cat) {
   return 'other'
 }
 
-function ProductCard({ product, onAdd }) {
-  const [imgErr, setImgErr] = useState(false)
-  return (
-    <div className="card group flex-shrink-0 w-44 sm:w-52 hover:shadow-soft-md transition-all duration-200">
-      <div className="relative h-32 sm:h-36 bg-paper-100 rounded-xl overflow-hidden mb-3">
-        {product.image_url && !imgErr ? (
-          <img
-            src={product.image_url}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-            onError={() => setImgErr(true)}
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-paper-400"><CategoryIcon category={product.category} className="w-9 h-9" strokeWidth={1.25} /></div>
-        )}
-        {!product.is_available && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-            <span className="text-white text-xs font-semibold bg-black/60 px-2 py-1 rounded-full">Indisponible</span>
-          </div>
-        )}
-      </div>
-      <p className=" font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{product.name}</p>
-      <p className="text-brand-600 font-bold text-sm mb-3">{product.price.toLocaleString('fr-FR')} FCFA</p>
-      <button
-        onClick={() => onAdd(product)}
-        disabled={!product.is_available}
-        className="w-full flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        <ShoppingCart className="w-3.5 h-3.5" /> Ajouter
-      </button>
-    </div>
-  )
-}
+const normalize = (s = '') => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
-function CategorySection({ title, icon: Icon, products, onAdd, onSeeAll }) {
-  const scrollRef = useRef(null)
-  if (products.length === 0) return null
-  return (
-    <div className="mb-10">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display font-medium text-xl text-stone-900 flex items-center gap-2">
-          <span className="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><Icon className="w-4 h-4" /></span> {title}
-        </h2>
-        <button onClick={onSeeAll} className="flex items-center gap-1 text-brand-600 text-sm font-semibold hover:underline">
-          Voir tout <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-      <div ref={scrollRef} className="flex gap-3 overflow-x-auto pb-3 scrollbar-hide">
-        {products.map(p => (
-          <ProductCard key={p.id} product={p} onAdd={onAdd} />
-        ))}
-      </div>
-    </div>
-  )
-}
+const SORTS = [
+  { key: 'distance',   label: 'Plus proche' },
+  { key: 'price_asc',  label: 'Prix croissant' },
+  { key: 'price_desc', label: 'Prix décroissant' },
+]
 
 export default function Catalog() {
+  const { position, radius, setRadius } = usePosition()
+  const [params, setParams] = useSearchParams()
   const [products, setProducts] = useState([])
   const [loading, setLoading]   = useState(true)
   const [activeTab, setActiveTab] = useState('all')
-  const [search, setSearch]     = useState('')
-  const { addToCart } = useAuth()
-  const navigate = useNavigate()
+  const [search, setSearch] = useState(params.get('q') || '')
+  const [sort, setSort] = useState('distance')
 
   useEffect(() => {
     api.get('/products')
@@ -97,140 +52,103 @@ export default function Catalog() {
       .finally(() => setLoading(false))
   }, [])
 
-  const handleAdd = (product) => {
-    addToCart(product)
-    toast.success(`${product.name} ajouté au panier`, { icon: <ShoppingCart className="w-4 h-4 text-brand-600" /> })
-  }
+  // Garde la recherche dans l'URL (partage du lien, bouton retour)
+  useEffect(() => {
+    const t = setTimeout(() => setParams(search ? { q: search } : {}, { replace: true }), 300)
+    return () => clearTimeout(t)
+  }, [search])
 
-  const filtered = products.filter(p => {
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase())
-    const matchTab    = activeTab === 'all' || getCategoryKey(p.category) === activeTab
-    return matchSearch && matchTab
-  })
-
-  const foodProducts    = filtered.filter(p => getCategoryKey(p.category) === 'food')
-  const fashionProducts = filtered.filter(p => getCategoryKey(p.category) === 'fashion')
-  const healthProducts  = filtered.filter(p => getCategoryKey(p.category) === 'health')
-  const otherProducts   = filtered.filter(p => getCategoryKey(p.category) === 'other')
-
-  const showSections = activeTab === 'all' && !search
+  const results = useMemo(() => {
+    const q = normalize(search.trim())
+    const filtered = products.filter(p => {
+      const matchSearch = !q || normalize(`${p.name} ${p.category} ${p.description || ''} ${p.shop_name || ''}`).includes(q)
+      const matchTab = activeTab === 'all' || getCategoryKey(p.category) === activeTab
+      return matchSearch && matchTab
+    })
+    const withDist = sortByDistance(filtered, position, position ? radius : null)
+    if (sort === 'price_asc')  return [...withDist].sort((a, b) => a.price - b.price)
+    if (sort === 'price_desc') return [...withDist].sort((a, b) => b.price - a.price)
+    return withDist
+  }, [products, search, activeTab, position, radius, sort])
 
   return (
     <div className="min-h-screen bg-paper-50">
       <Navbar />
-      <div className="page-container max-w-5xl mx-auto">
+      <div className="page-container">
 
-        {/* Header */}
-        <div className="mb-6">
-          <p className="eyebrow mb-3"><ShoppingBag className="w-3.5 h-3.5" /> Catalogue</p>
-          <h1 className="page-title">Nos produits</h1>
-        </div>
+        <header className="mb-6">
+          <p className="eyebrow mb-3"><ShoppingBag className="w-3.5 h-3.5" /> Produits</p>
+          <h1 className="page-title">
+            {position ? <>Disponible <em className="text-brand-600 font-normal">près de vous</em></> : 'Tous les produits'}
+          </h1>
+        </header>
 
-        {/* Search */}
-        <div className="relative mb-5">
+        {/* Recherche */}
+        <div className="relative mb-4 max-w-2xl">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
-          <input
-            className="input pl-11 w-full"
-            placeholder="Rechercher mil, pagne, karité…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <input className="input pl-11 pr-10 py-3.5 rounded-full" placeholder="Mil, karité, pagne, sandales…"
+            value={search} onChange={e => setSearch(e.target.value)} aria-label="Rechercher un produit" />
+          {search && (
+            <button onClick={() => setSearch('')} aria-label="Effacer la recherche"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full flex items-center justify-center text-stone-400 hover:bg-paper-100">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Category tabs */}
-        <div className="flex gap-2 mb-7 overflow-x-auto pb-1 scrollbar-hide">
+        {/* Position, rayon, tri */}
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <PositionChip />
+          <RadiusFilter />
+          <label className="ml-auto flex items-center gap-2 text-xs text-stone-500">
+            Trier par
+            <select value={sort} onChange={e => setSort(e.target.value)}
+              className="bg-white border border-paper-300 rounded-full px-3 py-1.5 text-xs font-semibold text-ink-900 focus:outline-none focus:border-brand-500">
+              {SORTS.map(s => (
+                <option key={s.key} value={s.key}>{s.key === 'distance' && !position ? 'Plus récents' : s.label}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        {/* Catégories */}
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-1 scrollbar-hide">
           {CATEGORIES.map(({ key, label, icon: Icon }) => (
-            <button
-              key={key}
-              onClick={() => { setActiveTab(key); setSearch('') }}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold shrink-0 transition-all ${
-                activeTab === key
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300'
-              }`}
-            >
+            <button key={key} onClick={() => setActiveTab(key)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium border shrink-0 transition-colors ${
+                activeTab === key ? 'bg-brand-600 text-white border-brand-600' : 'bg-white text-ink-700 border-paper-300 hover:border-ink-900'
+              }`}>
               <Icon className="w-4 h-4" /> {label}
             </button>
           ))}
         </div>
 
+        {!loading && (
+          <p className="text-sm text-stone-500 mb-5">
+            <span className="font-semibold text-ink-900">{results.length}</span> produit{results.length > 1 ? 's' : ''}
+            {position && radius ? ` à moins de ${radius} km` : ''}
+            {position && sort === 'distance' ? ' · du plus proche au plus loin' : ''}
+          </p>
+        )}
+
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="card h-56 animate-pulse bg-stone-50" />
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => <div key={i} className="rounded-xl3 h-72 animate-pulse bg-paper-100" />)}
           </div>
-        ) : filtered.length === 0 ? (
-          <div className="card text-center py-20">
-            <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-stone-300" />
-            </div>
-            <p className="font-display font-medium text-stone-500 text-lg mb-1">Aucun produit trouvé</p>
-            <p className="text-stone-400 text-sm">Essayez un autre terme ou catégorie</p>
+        ) : results.length === 0 ? (
+          <div className="card text-center py-14">
+            <span className="w-12 h-12 rounded-2xl bg-paper-100 text-paper-500 flex items-center justify-center mx-auto mb-4">
+              <Package className="w-5 h-5" />
+            </span>
+            <p className="font-semibold text-ink-900">Aucun produit trouvé{position && radius ? ` à moins de ${radius} km` : ''}</p>
+            <p className="text-sm text-stone-500 mt-1">Essayez un autre mot ou élargissez la zone.</p>
+            {position && radius && (
+              <button onClick={() => setRadius(null)} className="btn-outline mt-5">Chercher dans tout le Burkina</button>
+            )}
           </div>
-        ) : showSections ? (
-          <>
-            <CategorySection
-              title="Alimentation"
-              icon={Wheat}
-              products={foodProducts}
-              onAdd={handleAdd}
-              onSeeAll={() => setActiveTab('food')}
-            />
-            <CategorySection
-              title="Mode & Vêtements"
-              icon={Shirt}
-              products={fashionProducts}
-              onAdd={handleAdd}
-              onSeeAll={() => setActiveTab('fashion')}
-            />
-            <CategorySection
-              title="Santé & Beauté"
-              icon={Sparkles}
-              products={healthProducts}
-              onAdd={handleAdd}
-              onSeeAll={() => setActiveTab('health')}
-            />
-            <CategorySection
-              title="Autre"
-              icon={Package}
-              products={otherProducts}
-              onAdd={handleAdd}
-              onSeeAll={() => setActiveTab('other')}
-            />
-          </>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {filtered.map(p => (
-              <div key={p.id} className="card group hover:shadow-soft-md transition-all duration-200">
-                <div className="relative h-36 bg-paper-100 rounded-xl overflow-hidden mb-3">
-                  {p.image_url ? (
-                    <img
-                      src={p.image_url}
-                      alt={p.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={e => { e.target.style.display = 'none' }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-paper-400"><CategoryIcon category={product.category} className="w-9 h-9" strokeWidth={1.25} /></div>
-                  )}
-                  {!p.is_available && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <span className="text-white text-xs font-semibold bg-black/60 px-2 py-1 rounded-full">Indisponible</span>
-                    </div>
-                  )}
-                </div>
-                <p className=" font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{p.name}</p>
-                <p className="text-brand-600 font-bold text-sm mb-3">{p.price.toLocaleString('fr-FR')} FCFA</p>
-                <button
-                  onClick={() => handleAdd(p)}
-                  disabled={!p.is_available}
-                  className="w-full flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <ShoppingCart className="w-3.5 h-3.5" /> Ajouter au panier
-                </button>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {results.map(p => <ProductCard key={p.id} product={p} />)}
           </div>
         )}
       </div>

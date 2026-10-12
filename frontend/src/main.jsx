@@ -4,13 +4,18 @@ import { BrowserRouter } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import { AuthProvider } from './contexts/AuthContext.jsx'
+import { PositionProvider } from './contexts/PositionContext.jsx'
+import LocationPicker from './components/LocationPicker.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <App />
+        <PositionProvider>
+          <App />
+          <LocationPicker />
+        </PositionProvider>
         <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       </AuthProvider>
     </BrowserRouter>

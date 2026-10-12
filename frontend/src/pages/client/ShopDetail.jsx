@@ -4,13 +4,16 @@ import Navbar from '../../components/Navbar'
 import ProductCard from '../../components/ProductCard'
 import StarRating from '../../components/StarRating'
 import { useAuth } from '../../contexts/AuthContext'
+import { usePosition } from '../../contexts/PositionContext'
+import { haversine, formatDistance, directionsLink } from '../../utils/geo'
 import api from '../../api/axios'
-import { MapPin, Store, Send, Star, Package, MessageSquare } from 'lucide-react'
+import { MapPin, Store, Send, Star, Package, MessageSquare, Navigation } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function ShopDetail() {
   const { id } = useParams()
   const { user } = useAuth()
+  const { position } = usePosition()
   const [shop, setShop] = useState(null)
   const [reviews, setReviews] = useState([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +61,9 @@ export default function ShopDetail() {
   )
   if (!shop) return null
 
+  const hasCoords = shop.latitude != null && shop.longitude != null
+  const distance = position && hasCoords ? haversine(position.lat, position.lng, shop.latitude, shop.longitude) : null
+
   return (
     <div className="min-h-screen bg-paper-50">
       <Navbar />
@@ -89,9 +95,16 @@ export default function ShopDetail() {
                 <p className="text-white/70 mt-3 text-sm leading-relaxed">{shop.description}</p>
               )}
               {shop.address && (
-                <div className="flex items-center gap-1.5 mt-3 text-white/60 text-sm">
+                <div className="flex items-center gap-1.5 mt-3 text-white/70 text-sm">
                   <MapPin className="w-4 h-4 shrink-0" />{shop.address}
+                  {distance != null && <span className="font-semibold text-white">· à {formatDistance(distance)} de vous</span>}
                 </div>
+              )}
+              {hasCoords && (
+                <a href={directionsLink(shop.latitude, shop.longitude)} target="_blank" rel="noopener noreferrer"
+                  className="btn-md bg-white text-ink-900 hover:bg-paper-100 mt-5">
+                  <Navigation className="w-4 h-4" /> Itinéraire vers la boutique
+                </a>
               )}
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import CategoryIcon from './CategoryIcon'
+import { formatDistance } from '../utils/geo'
 
 export default function ProductCard({ product, showShop = true }) {
   const { user, addToCart } = useAuth()
@@ -59,6 +60,9 @@ export default function ProductCard({ product, showShop = true }) {
             <Link to={`/client/shop/${product.shop_id}`}
               className="inline-flex items-center gap-1 mt-1 text-xs text-stone-500 hover:text-brand-700 font-medium">
               <MapPin className="w-3 h-3" /> {product.shop_name}
+              {product.distance != null && (
+                <span className="font-semibold text-brand-700">· {formatDistance(product.distance)}</span>
+              )}
             </Link>
           )}
           {product.description && (
