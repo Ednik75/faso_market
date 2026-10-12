@@ -95,7 +95,7 @@ export default function Cart() {
             </div>
             <h2 className="font-display font-medium text-xl text-stone-700 mb-2">Votre panier est vide</h2>
             <p className="text-stone-400 mb-7">Ajoutez des produits depuis les boutiques Market BF</p>
-            <button onClick={() => navigate('/client/search')} className="btn-primary btn-md">
+            <button onClick={() => navigate('/client/catalog')} className="btn-primary btn-md">
               Parcourir les produits <ArrowRight className="w-4 h-4" />
             </button>
           </div>

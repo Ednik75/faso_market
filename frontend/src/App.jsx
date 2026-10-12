@@ -8,8 +8,6 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 
 import ClientDashboard from './pages/client/Dashboard'
-import SearchProducts from './pages/client/SearchProducts'
-import ShopsMap from './pages/client/ShopsMap'
 import ClientOrders from './pages/client/Orders'
 import Cart from './pages/client/Cart'
 import ShopDetail from './pages/client/ShopDetail'
@@ -46,9 +44,10 @@ export default function App() {
 
       {/* Client routes */}
       <Route path="/client/dashboard" element={<PrivateRoute role="client"><ClientDashboard /></PrivateRoute>} />
-      <Route path="/client/search" element={<PrivateRoute role="client"><SearchProducts /></PrivateRoute>} />
+      {/* Anciennes adresses : la recherche vit dans le catalogue, la carte dans « Près de moi » */}
+      <Route path="/client/search" element={<Navigate to="/client/catalog" replace />} />
       <Route path="/client/catalog" element={<PrivateRoute role="client"><Catalog /></PrivateRoute>} />
-      <Route path="/client/map" element={<PrivateRoute role="client"><ShopsMap /></PrivateRoute>} />
+      <Route path="/client/map" element={<Navigate to="/client/dashboard?vue=carte" replace />} />
       <Route path="/client/orders" element={<PrivateRoute role="client"><ClientOrders /></PrivateRoute>} />
       <Route path="/client/cart" element={<PrivateRoute role="client"><Cart /></PrivateRoute>} />
       <Route path="/client/shop/:id" element={<PrivateRoute role="client"><ShopDetail /></PrivateRoute>} />

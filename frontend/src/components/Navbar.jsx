@@ -3,16 +3,16 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import {
   ShoppingBag, Store, Menu, X, LogOut, User,
-  LayoutDashboard, Package, Map, ClipboardList,
+  LayoutDashboard, Package, Navigation, ClipboardList,
   BarChart2, Settings, Shield,
 } from 'lucide-react'
 import Logo from './Logo'
+import { PositionChip } from './LocationBar'
 
 const clientLinks = [
-  { to: '/client/dashboard', label: 'Accueil',    icon: LayoutDashboard },
-  { to: '/client/catalog',   label: 'Produits',   icon: Package },
-  { to: '/client/map',       label: 'Carte',      icon: Map },
-  { to: '/client/orders',    label: 'Commandes',  icon: ClipboardList },
+  { to: '/client/dashboard', label: 'Près de moi', icon: Navigation },
+  { to: '/client/catalog',   label: 'Produits',    icon: Package },
+  { to: '/client/orders',    label: 'Commandes',   icon: ClipboardList },
 ]
 const merchantLinks = [
   { to: '/merchant/dashboard',   label: 'Tableau de bord', icon: LayoutDashboard },
@@ -74,6 +74,7 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-1.5">
+            {user?.role === 'client' && <PositionChip className="hidden md:inline-flex mr-1" />}
             {user?.role === 'client' && (
               <Link to="/client/cart" aria-label="Panier"
                 className="relative w-10 h-10 rounded-full flex items-center justify-center text-ink-700 hover:bg-paper-100 transition-colors">
@@ -117,6 +118,7 @@ export default function Navbar() {
       {/* Menu mobile */}
       {open && (
         <div className="lg:hidden border-t border-paper-200 bg-paper-50 px-4 py-4 animate-fade-in">
+          {user?.role === 'client' && <PositionChip className="md:hidden mb-3" />}
           <div className="space-y-1 mb-4">
             {links.map(({ to, label, icon: Icon }) => (
               <Link key={to} to={to} onClick={() => setOpen(false)}
