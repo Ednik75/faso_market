@@ -94,7 +94,7 @@ function HeroVisual() {
       </div>
 
       {/* Pastilles flottantes */}
-      <div className="hidden sm:flex absolute -left-10 top-[46%] items-center gap-3 bg-white rounded-2xl shadow-soft-lg border border-paper-200 pl-2 pr-4 py-2">
+      <div className="hidden sm:flex absolute -top-7 left-6 lg:-left-8 items-center gap-3 bg-white rounded-2xl shadow-soft-lg border border-paper-200 pl-2 pr-4 py-2">
         <img src="/orange.png" alt="" className="w-9 h-9 object-contain rounded-lg" />
         <div className="leading-tight">
           <p className="text-xs font-semibold text-ink-900">Paiement reçu</p>
@@ -102,7 +102,7 @@ function HeroVisual() {
         </div>
         <CheckCircle2 className="w-4 h-4 text-emerald-600 ml-1" />
       </div>
-      <div className="hidden sm:flex absolute -right-5 -bottom-6 items-center gap-2.5 bg-accent-400 text-ink-900 rounded-2xl shadow-soft-lg px-4 py-3">
+      <div className="hidden sm:flex absolute right-6 lg:-right-5 -bottom-6 items-center gap-2.5 bg-accent-400 text-ink-900 rounded-2xl shadow-soft-lg px-4 py-3">
         <Clock className="w-4 h-4" />
         <p className="text-xs font-semibold">Prête en 25 min</p>
       </div>
