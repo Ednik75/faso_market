@@ -3,15 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../../components/Navbar'
 import api from '../../api/axios'
 import { useAuth } from '../../contexts/AuthContext'
-import { Search, ShoppingCart, ChevronRight, Package } from 'lucide-react'
+import { Search, ShoppingCart, ChevronRight, Package, LayoutGrid, Wheat, Shirt, Sparkles, ShoppingBag } from 'lucide-react'
 import toast from 'react-hot-toast'
+import CategoryIcon from '../../components/CategoryIcon'
 
 const CATEGORIES = [
-  { key: 'all',        label: 'Tous',               emoji: '🛍️' },
-  { key: 'food',       label: 'Alimentation',        emoji: '🌾' },
-  { key: 'fashion',   label: 'Mode & Vêtements',    emoji: '👗' },
-  { key: 'health',    label: 'Santé & Beauté',       emoji: '✨' },
-  { key: 'other',     label: 'Autre',                emoji: '📦' },
+  { key: 'all',        label: 'Tous',               icon: LayoutGrid },
+  { key: 'food',       label: 'Alimentation',        icon: Wheat },
+  { key: 'fashion',   label: 'Mode & Vêtements',    icon: Shirt },
+  { key: 'health',    label: 'Santé & Beauté',       icon: Sparkles },
+  { key: 'other',     label: 'Autre',                icon: Package },
 ]
 
 const FOOD_CATS    = ['Céréales', 'Légumineuses', 'Huiles', 'Épices & Condiments', 'Boissons', 'Alimentation']
@@ -28,8 +29,8 @@ function getCategoryKey(cat) {
 function ProductCard({ product, onAdd }) {
   const [imgErr, setImgErr] = useState(false)
   return (
-    <div className="card group flex-shrink-0 w-44 sm:w-52 hover:shadow-glass-md transition-all duration-200">
-      <div className="relative h-32 sm:h-36 bg-sand-100 rounded-xl overflow-hidden mb-3">
+    <div className="card group flex-shrink-0 w-44 sm:w-52 hover:shadow-soft-md transition-all duration-200">
+      <div className="relative h-32 sm:h-36 bg-paper-100 rounded-xl overflow-hidden mb-3">
         {product.image_url && !imgErr ? (
           <img
             src={product.image_url}
@@ -38,7 +39,7 @@ function ProductCard({ product, onAdd }) {
             onError={() => setImgErr(true)}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+          <div className="w-full h-full flex items-center justify-center text-paper-400"><CategoryIcon category={product.category} className="w-9 h-9" strokeWidth={1.25} /></div>
         )}
         {!product.is_available && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -46,12 +47,12 @@ function ProductCard({ product, onAdd }) {
           </div>
         )}
       </div>
-      <p className="font-display font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{product.name}</p>
-      <p className="text-forest-600 font-bold text-sm mb-3">{product.price.toLocaleString('fr-FR')} FCFA</p>
+      <p className=" font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{product.name}</p>
+      <p className="text-brand-600 font-bold text-sm mb-3">{product.price.toLocaleString('fr-FR')} FCFA</p>
       <button
         onClick={() => onAdd(product)}
         disabled={!product.is_available}
-        className="w-full flex items-center justify-center gap-1.5 bg-forest-50 hover:bg-forest-100 text-forest-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <ShoppingCart className="w-3.5 h-3.5" /> Ajouter
       </button>
@@ -59,16 +60,16 @@ function ProductCard({ product, onAdd }) {
   )
 }
 
-function CategorySection({ title, emoji, products, onAdd, onSeeAll }) {
+function CategorySection({ title, icon: Icon, products, onAdd, onSeeAll }) {
   const scrollRef = useRef(null)
   if (products.length === 0) return null
   return (
     <div className="mb-10">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display font-bold text-xl text-stone-900 flex items-center gap-2">
-          <span className="text-2xl">{emoji}</span> {title}
+        <h2 className="font-display font-medium text-xl text-stone-900 flex items-center gap-2">
+          <span className="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center"><Icon className="w-4 h-4" /></span> {title}
         </h2>
-        <button onClick={onSeeAll} className="flex items-center gap-1 text-forest-600 text-sm font-semibold hover:underline">
+        <button onClick={onSeeAll} className="flex items-center gap-1 text-brand-600 text-sm font-semibold hover:underline">
           Voir tout <ChevronRight className="w-4 h-4" />
         </button>
       </div>
@@ -98,7 +99,7 @@ export default function Catalog() {
 
   const handleAdd = (product) => {
     addToCart(product)
-    toast.success(`${product.name} ajouté au panier`, { icon: '🛒' })
+    toast.success(`${product.name} ajouté au panier`, { icon: <ShoppingCart className="w-4 h-4 text-brand-600" /> })
   }
 
   const filtered = products.filter(p => {
@@ -115,14 +116,14 @@ export default function Catalog() {
   const showSections = activeTab === 'all' && !search
 
   return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="min-h-screen bg-paper-50">
       <Navbar />
       <div className="page-container max-w-5xl mx-auto">
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-stone-400 text-sm font-display mb-1">🛍️ Catalogue</p>
-          <h1 className="font-display font-black text-3xl text-stone-900">Nos produits</h1>
+          <p className="eyebrow mb-3"><ShoppingBag className="w-3.5 h-3.5" /> Catalogue</p>
+          <h1 className="page-title">Nos produits</h1>
         </div>
 
         {/* Search */}
@@ -138,17 +139,17 @@ export default function Catalog() {
 
         {/* Category tabs */}
         <div className="flex gap-2 mb-7 overflow-x-auto pb-1 scrollbar-hide">
-          {CATEGORIES.map(({ key, label, emoji }) => (
+          {CATEGORIES.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
               onClick={() => { setActiveTab(key); setSearch('') }}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold shrink-0 transition-all ${
                 activeTab === key
-                  ? 'bg-forest-600 text-white shadow-sm'
+                  ? 'bg-brand-600 text-white shadow-sm'
                   : 'bg-white border border-stone-200 text-stone-600 hover:border-stone-300'
               }`}
             >
-              <span>{emoji}</span> {label}
+              <Icon className="w-4 h-4" /> {label}
             </button>
           ))}
         </div>
@@ -164,35 +165,35 @@ export default function Catalog() {
             <div className="w-16 h-16 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Package className="w-8 h-8 text-stone-300" />
             </div>
-            <p className="font-display font-bold text-stone-500 text-lg mb-1">Aucun produit trouvé</p>
+            <p className="font-display font-medium text-stone-500 text-lg mb-1">Aucun produit trouvé</p>
             <p className="text-stone-400 text-sm">Essayez un autre terme ou catégorie</p>
           </div>
         ) : showSections ? (
           <>
             <CategorySection
               title="Alimentation"
-              emoji="🌾"
+              icon={Wheat}
               products={foodProducts}
               onAdd={handleAdd}
               onSeeAll={() => setActiveTab('food')}
             />
             <CategorySection
               title="Mode & Vêtements"
-              emoji="👗"
+              icon={Shirt}
               products={fashionProducts}
               onAdd={handleAdd}
               onSeeAll={() => setActiveTab('fashion')}
             />
             <CategorySection
               title="Santé & Beauté"
-              emoji="✨"
+              icon={Sparkles}
               products={healthProducts}
               onAdd={handleAdd}
               onSeeAll={() => setActiveTab('health')}
             />
             <CategorySection
               title="Autre"
-              emoji="📦"
+              icon={Package}
               products={otherProducts}
               onAdd={handleAdd}
               onSeeAll={() => setActiveTab('other')}
@@ -201,8 +202,8 @@ export default function Catalog() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {filtered.map(p => (
-              <div key={p.id} className="card group hover:shadow-glass-md transition-all duration-200">
-                <div className="relative h-36 bg-sand-100 rounded-xl overflow-hidden mb-3">
+              <div key={p.id} className="card group hover:shadow-soft-md transition-all duration-200">
+                <div className="relative h-36 bg-paper-100 rounded-xl overflow-hidden mb-3">
                   {p.image_url ? (
                     <img
                       src={p.image_url}
@@ -211,7 +212,7 @@ export default function Catalog() {
                       onError={e => { e.target.style.display = 'none' }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-3xl">📦</div>
+                    <div className="w-full h-full flex items-center justify-center text-paper-400"><CategoryIcon category={product.category} className="w-9 h-9" strokeWidth={1.25} /></div>
                   )}
                   {!p.is_available && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
@@ -219,12 +220,12 @@ export default function Catalog() {
                     </div>
                   )}
                 </div>
-                <p className="font-display font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{p.name}</p>
-                <p className="text-forest-600 font-bold text-sm mb-3">{p.price.toLocaleString('fr-FR')} FCFA</p>
+                <p className=" font-semibold text-stone-900 text-sm leading-tight line-clamp-2 mb-1">{p.name}</p>
+                <p className="text-brand-600 font-bold text-sm mb-3">{p.price.toLocaleString('fr-FR')} FCFA</p>
                 <button
                   onClick={() => handleAdd(p)}
                   disabled={!p.is_available}
-                  className="w-full flex items-center justify-center gap-1.5 bg-forest-50 hover:bg-forest-100 text-forest-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 text-xs font-semibold py-2 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <ShoppingCart className="w-3.5 h-3.5" /> Ajouter au panier
                 </button>

@@ -78,8 +78,8 @@ export default function MerchantStatistics() {
                   <YAxis tick={{ fontSize: 11, fill: '#a8a29e', fontFamily: 'Inter' }} axisLine={false} tickLine={false} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
                   <Tooltip content={<CustomTooltip />} />
                   <Line type="monotone" dataKey="revenue" name="Revenus"
-                    stroke="#0d8259" strokeWidth={2} dot={{ r: 2.5, fill: '#0d8259', strokeWidth: 0 }}
-                    activeDot={{ r: 5, fill: '#0d8259', stroke: '#d3f5e3', strokeWidth: 3 }} />
+                    stroke="#b8461f" strokeWidth={2} dot={{ r: 2.5, fill: '#b8461f', strokeWidth: 0 }}
+                    activeDot={{ r: 5, fill: '#b8461f', stroke: '#fae8dd', strokeWidth: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             )}
@@ -105,7 +105,7 @@ export default function MerchantStatistics() {
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#a8a29e' }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 11, fill: '#57534e', fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="units_sold" name="Unités vendues" fill="#0d8259" radius={[0, 4, 4, 0]} barSize={16} />
+                <Bar dataKey="units_sold" name="Unités vendues" fill="#b8461f" radius={[0, 4, 4, 0]} barSize={16} />
               </BarChart>
             </ResponsiveContainer>
           )}

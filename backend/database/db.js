@@ -344,7 +344,7 @@ async function seedData() {
   await db.run('INSERT INTO reviews (client_id, shop_id, rating, comment) VALUES (?, ?, ?, ?)',
     [c1Id, shop2Id, 4, 'Belle sélection de pagnes et boubous. Le bazin est de bonne qualité. Livraison rapide à Ouagadougou.']);
 
-  console.log('✅ Base de données Market BF initialisée (contexte Burkina Faso)');
+  console.log('[OK] Base de données Market BF initialisée (contexte Burkina Faso)');
   console.log('   Admin:       admin@marketbf.com      / Admin123!');
   console.log('   Commerçant1: merchant1@marketbf.com  / Merchant1!');
   console.log('   Commerçant2: merchant2@marketbf.com  / Merchant2!');

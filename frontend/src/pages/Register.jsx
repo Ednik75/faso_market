@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Store, User, Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Store, ShoppingBag, Eye, EyeOff, ArrowRight, CheckCircle2, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import GoogleSignIn from '../components/GoogleSignIn'
+import Logo from '../components/Logo'
+import BFFlag from '../components/BFFlag'
 
 const ROLES = [
-  { value: 'client',   label: 'Client',      desc: 'J\'achète des produits',   emoji: '🛒', benefits: ['Recherche de boutiques', 'Commandes en ligne', 'Paiement mobile'] },
-  { value: 'merchant', label: 'Commerçant',  desc: 'Je vends mes produits',    emoji: '🏪', benefits: ['Gestion de stock', 'Réception de commandes', 'Statistiques de ventes'] },
+  { value: 'client',   label: 'Client',      desc: 'J\'achète des produits',   icon: ShoppingBag, benefits: ['Recherche de boutiques', 'Commandes en ligne', 'Paiement mobile'] },
+  { value: 'merchant', label: 'Commerçant',  desc: 'Je vends mes produits',    icon: Store, benefits: ['Gestion de stock', 'Réception de commandes', 'Statistiques de ventes'] },
 ]
 
 export default function Register() {
@@ -27,7 +29,7 @@ export default function Register() {
     setLoading(true)
     try {
       const user = await register(form)
-      toast.success(`Bienvenue sur Market BF, ${user.name.split(' ')[0]} ! 🎉`)
+      toast.success(`Bienvenue sur Market BF, ${user.name.split(' ')[0]} !`)
       navigate(`/${user.role}/dashboard`)
     } catch (err) {
       toast.error(err.response?.data?.error || 'Erreur lors de la création du compte')
@@ -40,80 +42,80 @@ export default function Register() {
     <div className="min-h-screen flex">
 
       {/* Panneau gauche */}
-      <div className="hidden lg:flex w-[46%] bg-gradient-dark bg-pattern-geo flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gold-500/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-forest-500/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-        <Link to="/" className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
-            <Store className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-display font-bold text-xl">
-            <span className="text-white">Market</span><span className="text-gold-400">BF</span>
-          </span>
-        </Link>
-
+      <div className="hidden lg:flex w-[46%] section-hero flex-col justify-between p-10 xl:p-14">
         <div className="relative z-10">
-          <h2 className="font-display font-black text-4xl text-white leading-tight mb-6">
-            Rejoignez<br />
-            <span className="text-gradient-gold">Market BF</span>
+          <Logo tone="light" />
+        </div>
+
+        <div className="relative z-10 max-w-md">
+          <h2 className="font-display font-medium text-4xl xl:text-5xl text-white leading-[1.05] tracking-tight mb-10">
+            Rejoignez le marché <em className="text-accent-400 font-normal">en ligne</em> du Faso.
           </h2>
 
-          {/* Bénéfices dynamiques selon rôle */}
-          <div className="card-glass !p-6 mt-4">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-3xl">{selected?.emoji}</span>
+          {/* Bénéfices selon le rôle choisi */}
+          <div key={selected?.value} className="border-t border-white/15 pt-8 animate-fade-in">
+            <div className="flex items-center gap-4 mb-6">
+              <span className="w-12 h-12 rounded-2xl bg-accent-400 text-ink-900 flex items-center justify-center">
+                {selected && <selected.icon className="w-5 h-5" />}
+              </span>
               <div>
-                <p className="font-display font-bold text-white">{selected?.label}</p>
+                <p className="font-semibold text-white">{selected?.label}</p>
                 <p className="text-white/50 text-sm">{selected?.desc}</p>
               </div>
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {selected?.benefits.map(b => (
-                <li key={b} className="flex items-center gap-2 text-sm text-white/70">
-                  <CheckCircle2 className="w-4 h-4 text-forest-400 shrink-0" />{b}
+                <li key={b} className="flex items-center gap-3 text-[15px] text-white/80">
+                  <CheckCircle2 className="w-4 h-4 text-accent-400 shrink-0" />{b}
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <p className="relative z-10 text-white/20 text-xs">© 2025 Market BF · Ouagadougou 🇧🇫</p>
+        <p className="relative z-10 text-white/30 text-xs flex items-center gap-2">
+          © {new Date().getFullYear()} Market BF · Ouagadougou <BFFlag className="w-4 h-3" />
+        </p>
       </div>
 
       {/* Panneau droit */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-sand-50 overflow-y-auto">
-        <div className="w-full max-w-md animate-fade-up">
+      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 bg-paper-50 overflow-y-auto">
+        <div className="w-full max-w-[420px] animate-fade-up">
 
-          <Link to="/" className="lg:hidden flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-forest rounded-xl flex items-center justify-center">
-              <Store className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-display font-bold text-2xl">
-              <span className="text-forest-700">Market</span><span className="text-gold-500">BF</span>
-            </span>
-          </Link>
+          <Logo className="lg:hidden mb-10" />
 
-          <h1 className="font-display font-bold text-3xl text-stone-900 mb-1">Créer un compte</h1>
+          <h1 className="page-title mb-2">Créer un compte</h1>
           <p className="text-stone-500 mb-8">Gratuit et rapide — moins de 2 minutes</p>
 
           {/* Role selector */}
           <div className="grid grid-cols-2 gap-3 mb-6">
-            {ROLES.map(({ value, label, desc, emoji }) => (
-              <button key={value} type="button" onClick={() => upd('role', value)}
-                className={`p-4 rounded-2xl border-2 text-left transition-all ${
-                  form.role === value
-                    ? 'border-forest-500 bg-forest-50 shadow-forest/20 shadow-md'
-                    : 'border-stone-200 hover:border-stone-300 bg-white'
-                }`}>
-                <span className="text-2xl block mb-2">{emoji}</span>
-                <p className={`font-display font-semibold text-sm ${form.role === value ? 'text-forest-700' : 'text-stone-800'}`}>{label}</p>
-                <p className="text-xs text-stone-400 mt-0.5">{desc}</p>
-              </button>
-            ))}
+            {ROLES.map(({ value, label, desc, icon: Icon }) => {
+              const active = form.role === value
+              return (
+                <button key={value} type="button" onClick={() => upd('role', value)} aria-pressed={active}
+                  className={`relative p-4 rounded-2xl border text-left transition-all ${
+                    active
+                      ? 'border-ink-900 bg-white ring-1 ring-ink-900'
+                      : 'border-paper-300 hover:border-paper-400 bg-white/60'
+                  }`}>
+                  <span className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-colors ${
+                    active ? 'bg-brand-600 text-white' : 'bg-paper-100 text-ink-700'
+                  }`}>
+                    <Icon className="w-[18px] h-[18px]" />
+                  </span>
+                  {active && (
+                    <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-ink-900 text-white flex items-center justify-center">
+                      <Check className="w-3 h-3" strokeWidth={3} />
+                    </span>
+                  )}
+                  <p className="font-semibold text-sm text-ink-900">{label}</p>
+                  <p className="text-xs text-stone-500 mt-0.5">{desc}</p>
+                </button>
+              )
+            })}
           </div>
 
-          <div className="card !shadow-glass-md">
+          <div className="card !shadow-soft-md">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="field-label">Nom complet</label>
@@ -149,18 +151,18 @@ export default function Register() {
                     {[1,2,3,4].map(i => (
                       <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${
                         form.password.length >= i * 2
-                          ? i <= 2 ? 'bg-crimson-400' : i === 3 ? 'bg-gold-400' : 'bg-forest-500'
+                          ? i <= 2 ? 'bg-danger-400' : i === 3 ? 'bg-accent-400' : 'bg-brand-500'
                           : 'bg-stone-100'
                       }`} />
                     ))}
                   </div>
                   <p className="text-[10px] text-stone-400">
-                    {form.password.length < 6 ? 'Trop court' : form.password.length < 8 ? 'Faible' : (/[a-zA-Z]/.test(form.password) && /[0-9]/.test(form.password)) ? 'Fort ✓' : 'Ajoutez lettres et chiffres'}
+                    {form.password.length < 6 ? 'Trop court' : form.password.length < 8 ? 'Faible' : (/[a-zA-Z]/.test(form.password) && /[0-9]/.test(form.password)) ? 'Fort' : 'Ajoutez lettres et chiffres'}
                   </p>
                 </div>
               )}
 
-              <button type="submit" disabled={loading} className="btn-primary w-full justify-center py-3.5 mt-2">
+              <button type="submit" disabled={loading} className="btn-primary btn-lg w-full mt-2">
                 {loading ? (
                   <span className="flex items-center gap-2"><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Création…</span>
                 ) : (
@@ -174,7 +176,7 @@ export default function Register() {
 
           <p className="text-center text-sm text-stone-500 mt-6">
             Déjà inscrit ?{' '}
-            <Link to="/login" className="text-forest-600 font-semibold hover:underline">Se connecter</Link>
+            <Link to="/login" className="text-brand-600 font-semibold hover:underline">Se connecter</Link>
           </p>
         </div>
       </div>

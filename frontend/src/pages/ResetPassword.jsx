@@ -31,7 +31,7 @@ export default function ResetPassword() {
     setLoading(true)
     try {
       await resetPassword(token, password)
-      toast.success('Mot de passe réinitialisé ! Vous pouvez vous connecter. ✓')
+      toast.success('Mot de passe réinitialisé ! Vous pouvez vous connecter.')
       navigate('/login')
     } catch (err) {
       toast.error(err.response?.data?.error || 'Lien invalide ou expiré')
@@ -40,10 +40,10 @@ export default function ResetPassword() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-sand-50 p-6">
-        <div className="card !shadow-glass-md text-center max-w-md w-full animate-fade-up">
-          <XCircle className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
-          <h1 className="font-display font-bold text-xl text-stone-900 mb-2">Lien invalide</h1>
+      <div className="min-h-screen flex items-center justify-center bg-paper-50 p-6">
+        <div className="card !shadow-soft-md text-center max-w-md w-full animate-fade-up">
+          <XCircle className="w-12 h-12 text-danger-500 mx-auto mb-4" />
+          <h1 className="font-display font-medium text-xl text-stone-900 mb-2">Lien invalide</h1>
           <p className="text-sm text-stone-500 mb-6">Ce lien de réinitialisation est incomplet ou a expiré.</p>
           <Link to="/forgot-password" className="btn-primary w-full justify-center">Refaire une demande</Link>
         </div>
@@ -52,23 +52,23 @@ export default function ResetPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sand-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-paper-50 p-6">
       <div className="w-full max-w-md animate-fade-up">
 
         <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-forest rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
             <Store className="w-5 h-5 text-white" />
           </div>
-          <span className="font-display font-bold text-2xl">
-            <span className="text-forest-700">Market</span><span className="text-gold-500">BF</span>
+          <span className="font-display font-medium text-2xl">
+            <span className="text-brand-700">Market</span><span className="text-accent-500">BF</span>
           </span>
         </Link>
 
-        <div className="card !shadow-glass-md">
-          <div className="w-14 h-14 mb-5 bg-forest-50 rounded-2xl flex items-center justify-center">
-            <LockKeyhole className="w-7 h-7 text-forest-600" />
+        <div className="card !shadow-soft-md">
+          <div className="w-14 h-14 mb-5 bg-brand-50 rounded-2xl flex items-center justify-center">
+            <LockKeyhole className="w-7 h-7 text-brand-600" />
           </div>
-          <h1 className="font-display font-bold text-2xl text-stone-900 mb-2">Nouveau mot de passe</h1>
+          <h1 className="font-display font-medium text-2xl text-stone-900 mb-2">Nouveau mot de passe</h1>
           <p className="text-sm text-stone-500 mb-6">Choisissez un mot de passe fort pour sécuriser votre compte.</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -89,7 +89,7 @@ export default function ResetPassword() {
                 {RULES.map(({ test, label }) => {
                   const ok = test(password)
                   return (
-                    <li key={label} className={`flex items-center gap-2 text-xs ${ok ? 'text-forest-600' : 'text-stone-400'}`}>
+                    <li key={label} className={`flex items-center gap-2 text-xs ${ok ? 'text-brand-600' : 'text-stone-400'}`}>
                       {ok ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
                       {label}
                     </li>
@@ -103,7 +103,7 @@ export default function ResetPassword() {
               <input className="input" type={showPwd ? 'text' : 'password'} placeholder="••••••••"
                 value={confirm} onChange={e => setConfirm(e.target.value)} required />
               {confirm.length > 0 && !match && (
-                <p className="text-xs text-crimson-600 mt-1.5">Les mots de passe ne correspondent pas</p>
+                <p className="text-xs text-danger-600 mt-1.5">Les mots de passe ne correspondent pas</p>
               )}
             </div>
 
@@ -116,7 +116,7 @@ export default function ResetPassword() {
         </div>
 
         <p className="text-center text-sm text-stone-500 mt-6">
-          <Link to="/login" className="text-forest-600 font-semibold hover:underline">Retour à la connexion</Link>
+          <Link to="/login" className="text-brand-600 font-semibold hover:underline">Retour à la connexion</Link>
         </p>
       </div>
     </div>

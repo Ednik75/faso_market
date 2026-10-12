@@ -91,11 +91,11 @@ export default function MerchantStock() {
                       key={p.id}
                       onClick={() => selectProduct(p)}
                       className={`cursor-pointer transition-colors ${
-                        isSelected ? 'bg-forest-50/70' : 'hover:bg-stone-50/60'
+                        isSelected ? 'bg-brand-50/70' : 'hover:bg-stone-50/60'
                       }`}
                     >
                       <td className="px-4 py-3">
-                        <span className={`font-semibold ${isSelected ? 'text-forest-800' : 'text-stone-900'}`}>
+                        <span className={`font-semibold ${isSelected ? 'text-brand-800' : 'text-stone-900'}`}>
                           {p.name}
                         </span>
                       </td>
@@ -107,7 +107,7 @@ export default function MerchantStock() {
                       <td className="px-4 py-3 text-center text-stone-400 tabular-nums">{p.low_stock_threshold ?? 5}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-md border ${
-                          isLow ? 'bg-red-50 text-red-700 border-red-200' : 'bg-forest-50 text-forest-700 border-forest-200'
+                          isLow ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         }`}>
                           {isLow && <AlertTriangle className="w-3 h-3" />}
                           {isLow ? 'Stock faible' : 'OK'}
@@ -122,20 +122,20 @@ export default function MerchantStock() {
 
           {/* Historique des mouvements */}
           {selected && movements.length > 0 && (
-            <Panel title={<>Historique — <span className="text-forest-700">{selected.name}</span></>}>
+            <Panel title={<>Historique — <span className="text-brand-700">{selected.name}</span></>}>
               <ul className="divide-y divide-stone-100 max-h-56 overflow-y-auto">
                 {movements.map(m => (
                   <li key={m.id} className="flex items-center gap-3 px-5 py-2.5">
                     <div className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${
-                      m.type === 'entry' ? 'bg-forest-50 border-forest-100' : 'bg-red-50 border-red-100'
+                      m.type === 'entry' ? 'bg-emerald-50 border-emerald-100' : 'bg-red-50 border-red-100'
                     }`}>
                       {m.type === 'entry'
-                        ? <ArrowUp className="w-3.5 h-3.5 text-forest-600" />
+                        ? <ArrowUp className="w-3.5 h-3.5 text-emerald-600" />
                         : <ArrowDown className="w-3.5 h-3.5 text-red-600" />
                       }
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className={`font-semibold text-sm tabular-nums ${m.type === 'entry' ? 'text-forest-700' : 'text-red-600'}`}>
+                      <span className={`font-semibold text-sm tabular-nums ${m.type === 'entry' ? 'text-emerald-700' : 'text-red-600'}`}>
                         {m.type === 'entry' ? '+' : '−'}{m.quantity}
                       </span>
                       {m.note && <span className="text-xs text-stone-400 ml-2">{m.note}</span>}
@@ -162,7 +162,7 @@ export default function MerchantStock() {
             <>
               <div className="mb-5">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500 mb-1">Mouvement de stock</p>
-                <h2 className="font-display font-bold text-stone-900 truncate">{selected.name}</h2>
+                <h2 className="font-display font-medium text-stone-900 truncate">{selected.name}</h2>
               </div>
               <form onSubmit={handleMovement} className="space-y-4">
                 <div className="grid grid-cols-2 gap-2">
@@ -171,7 +171,7 @@ export default function MerchantStock() {
                     onClick={() => setForm(f => ({ ...f, type: 'entry' }))}
                     className={`py-2.5 rounded-lg border flex items-center justify-center gap-2 text-sm font-semibold transition-colors ${
                       form.type === 'entry'
-                        ? 'border-forest-500 bg-forest-50 text-forest-700'
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
                         : 'border-stone-200 text-stone-500 hover:border-stone-300'
                     }`}
                   >
@@ -222,7 +222,7 @@ export default function MerchantStock() {
                   {form.quantity && (
                     <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-stone-200/60">
                       <span className="text-stone-400">Après mouvement</span>
-                      <span className={`font-semibold tabular-nums ${form.type === 'entry' ? 'text-forest-700' : 'text-red-600'}`}>
+                      <span className={`font-semibold tabular-nums ${form.type === 'entry' ? 'text-emerald-700' : 'text-red-600'}`}>
                         {form.type === 'entry'
                           ? (selected.stock_quantity ?? 0) + parseInt(form.quantity || 0)
                           : (selected.stock_quantity ?? 0) - parseInt(form.quantity || 0)
@@ -235,7 +235,7 @@ export default function MerchantStock() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-4 py-2.5 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-2.5 transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Enregistrement…' : 'Enregistrer le mouvement'}
                 </button>

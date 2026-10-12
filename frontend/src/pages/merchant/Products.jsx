@@ -60,11 +60,11 @@ function ImagePicker({ value, onChange }) {
       {mode === 'file' ? (
         <div
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-stone-200 hover:border-forest-400 rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 bg-stone-50 hover:bg-forest-50"
+          className="border-2 border-dashed border-stone-200 hover:border-brand-400 rounded-lg p-4 cursor-pointer transition-colors flex flex-col items-center justify-center gap-2 bg-stone-50 hover:bg-brand-50"
         >
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
           {uploading ? (
-            <Loader2 className="w-7 h-7 text-forest-500 animate-spin" />
+            <Loader2 className="w-7 h-7 text-brand-500 animate-spin" />
           ) : (
             <ImageIcon className="w-7 h-7 text-stone-300" />
           )}
@@ -138,7 +138,7 @@ function ProductModal({ product, onClose, onSave }) {
       <div className="bg-white rounded-xl w-full max-w-md shadow-2xl animate-fade-up max-h-[90vh] overflow-y-auto border border-stone-200">
         <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100 sticky top-0 bg-white z-10">
           <div>
-            <h2 className="font-display font-bold text-lg text-stone-900">
+            <h2 className="font-display font-medium text-lg text-stone-900">
               {product ? 'Modifier le produit' : 'Nouveau produit'}
             </h2>
             <p className="text-stone-400 text-xs mt-0.5">
@@ -181,7 +181,7 @@ function ProductModal({ product, onClose, onSave }) {
               type="checkbox"
               checked={form.is_available === 1}
               onChange={e => update('is_available', e.target.checked ? 1 : 0)}
-              className="rounded w-4 h-4 accent-forest-600"
+              className="rounded w-4 h-4 accent-brand-600"
             />
             <div>
               <p className="text-sm font-semibold text-stone-800">Disponible à la vente</p>
@@ -194,7 +194,7 @@ function ProductModal({ product, onClose, onSave }) {
               Annuler
             </button>
             <button type="submit" disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-4 py-2.5 transition-colors disabled:opacity-50">
+              className="flex-1 flex items-center justify-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-2.5 transition-colors disabled:opacity-50">
               {loading
                 ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sauvegarde…</>
                 : 'Sauvegarder'
@@ -284,7 +284,7 @@ export default function MerchantProducts() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     <span className={`inline-flex text-[11px] font-semibold px-2 py-1 rounded-md border tabular-nums ${
-                      isLow ? 'bg-red-50 text-red-700 border-red-200' : 'bg-forest-50 text-forest-700 border-forest-200'
+                      isLow ? 'bg-red-50 text-red-700 border-red-200' : 'bg-brand-50 text-brand-700 border-brand-200'
                     }`}>
                       {p.stock_quantity ?? 0}
                     </span>
@@ -292,10 +292,10 @@ export default function MerchantProducts() {
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-md border ${
                       p.is_available
-                        ? 'bg-forest-50 text-forest-700 border-forest-200'
+                        ? 'bg-brand-50 text-brand-700 border-brand-200'
                         : 'bg-stone-50 text-stone-500 border-stone-200'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${p.is_available ? 'bg-forest-500' : 'bg-stone-400'}`} />
+                      <span className={`w-1.5 h-1.5 rounded-full ${p.is_available ? 'bg-brand-500' : 'bg-stone-400'}`} />
                       {p.is_available ? 'En ligne' : 'Masqué'}
                     </span>
                   </td>

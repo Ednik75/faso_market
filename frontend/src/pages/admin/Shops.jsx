@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 
 const STATUS_CFG = {
   pending:  { label: 'En attente', dot: 'bg-amber-500',  cls: 'bg-amber-50 text-amber-800 border-amber-200' },
-  active:   { label: 'Active',     dot: 'bg-forest-500', cls: 'bg-forest-50 text-forest-700 border-forest-200' },
+  active:   { label: 'Active',     dot: 'bg-emerald-500', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   rejected: { label: 'Rejetée',    dot: 'bg-red-500',    cls: 'bg-red-50 text-red-700 border-red-200' },
 }
 
@@ -156,7 +156,7 @@ export default function AdminShops() {
                             <button
                               onClick={() => validate(shop, 'active')}
                               disabled={busy}
-                              className="flex items-center gap-1 text-xs font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
                             >
                               <Check className="w-3.5 h-3.5" /> {shop.status === 'rejected' ? 'Réactiver' : 'Valider'}
                             </button>
