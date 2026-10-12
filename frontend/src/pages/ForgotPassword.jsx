@@ -22,32 +22,32 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-sand-50 p-6">
+    <div className="min-h-screen flex items-center justify-center bg-paper-50 p-6">
       <div className="w-full max-w-md animate-fade-up">
 
         <Link to="/" className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gradient-forest rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
             <Store className="w-5 h-5 text-white" />
           </div>
-          <span className="font-display font-bold text-2xl">
-            <span className="text-forest-700">Market</span><span className="text-gold-500">BF</span>
+          <span className="font-display font-medium text-2xl">
+            <span className="text-brand-700">Market</span><span className="text-accent-500">BF</span>
           </span>
         </Link>
 
-        <div className="card !shadow-glass-md">
+        <div className="card !shadow-soft-md">
           {sent ? (
             <div className="text-center py-4">
-              <div className="w-16 h-16 mx-auto mb-5 bg-forest-50 rounded-full flex items-center justify-center">
-                <MailCheck className="w-8 h-8 text-forest-600" />
+              <div className="w-16 h-16 mx-auto mb-5 bg-brand-50 rounded-full flex items-center justify-center">
+                <MailCheck className="w-8 h-8 text-brand-600" />
               </div>
-              <h1 className="font-display font-bold text-xl text-stone-900 mb-2">Vérifiez votre boîte mail</h1>
+              <h1 className="font-display font-medium text-xl text-stone-900 mb-2">Vérifiez votre boîte mail</h1>
               <p className="text-sm text-stone-500 leading-relaxed mb-6">
                 Si un compte existe avec <strong className="text-stone-700">{email}</strong>, vous recevrez
                 un lien de réinitialisation dans quelques instants. Le lien est valable <strong>1 heure</strong>.
               </p>
               <p className="text-xs text-stone-400 mb-6">
                 Rien reçu ? Vérifiez vos spams, ou{' '}
-                <button onClick={() => setSent(false)} className="text-forest-600 font-semibold hover:underline">réessayez</button>.
+                <button onClick={() => setSent(false)} className="text-brand-600 font-semibold hover:underline">réessayez</button>.
               </p>
               <Link to="/login" className="btn-outline w-full justify-center">
                 <ArrowLeft className="w-4 h-4" /> Retour à la connexion
@@ -55,10 +55,10 @@ export default function ForgotPassword() {
             </div>
           ) : (
             <>
-              <div className="w-14 h-14 mb-5 bg-gold-50 rounded-2xl flex items-center justify-center">
-                <KeyRound className="w-7 h-7 text-gold-600" />
+              <div className="w-14 h-14 mb-5 bg-accent-50 rounded-2xl flex items-center justify-center">
+                <KeyRound className="w-7 h-7 text-accent-600" />
               </div>
-              <h1 className="font-display font-bold text-2xl text-stone-900 mb-2">Mot de passe oublié ?</h1>
+              <h1 className="font-display font-medium text-2xl text-stone-900 mb-2">Mot de passe oublié ?</h1>
               <p className="text-sm text-stone-500 mb-6 leading-relaxed">
                 Pas de panique. Entrez l'adresse email de votre compte et nous vous enverrons
                 un lien pour choisir un nouveau mot de passe.
@@ -75,7 +75,7 @@ export default function ForgotPassword() {
                   ) : 'Envoyer le lien de réinitialisation'}
                 </button>
               </form>
-              <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm text-stone-500 hover:text-forest-600 mt-6 transition-colors">
+              <Link to="/login" className="flex items-center justify-center gap-1.5 text-sm text-stone-500 hover:text-brand-600 mt-6 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Retour à la connexion
               </Link>
             </>

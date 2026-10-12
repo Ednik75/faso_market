@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import api from '../api/axios'
 import toast from 'react-hot-toast'
+import { Info } from 'lucide-react'
 
 let gsiScriptPromise = null
 function loadGsiScript() {
@@ -87,7 +88,7 @@ export default function GoogleSignIn({ role }) {
       ) : (
         <button
           type="button"
-          onClick={() => toast('La connexion Google n\'est pas encore activée sur ce serveur.\nAjoutez GOOGLE_CLIENT_ID dans backend/.env', { icon: 'ℹ️', duration: 5000 })}
+          onClick={() => toast('La connexion Google n\'est pas encore activée sur ce serveur.\nAjoutez GOOGLE_CLIENT_ID dans backend/.env', { icon: <Info className="w-4 h-4 text-sky-600" />, duration: 5000 })}
           className="w-full flex items-center justify-center gap-3 border border-stone-200 bg-white rounded-full py-3 text-sm font-semibold text-stone-600 hover:bg-stone-50 hover:border-stone-300 transition-all"
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">

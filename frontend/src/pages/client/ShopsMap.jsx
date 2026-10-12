@@ -5,9 +5,10 @@ import L from 'leaflet'
 import Navbar from '../../components/Navbar'
 import ShopCard from '../../components/ShopCard'
 import api from '../../api/axios'
-import { MapPin, Store, Search, Navigation, Loader2 } from 'lucide-react'
+import { MapPin, Store, Search, Navigation, Loader2, Compass, ArrowRight } from 'lucide-react'
 import toast from 'react-hot-toast'
 import 'leaflet/dist/leaflet.css'
+import BFFlag from '../../components/BFFlag'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -16,18 +17,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 })
 
-const shopIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34],
+const shopIcon = new L.DivIcon({
+  className: '',
+  html: `<svg width="30" height="40" viewBox="0 0 30 40" xmlns="http://www.w3.org/2000/svg">
+    <path d="M15 39s13-12.6 13-23.5C28 7.5 22.2 1.5 15 1.5S2 7.5 2 15.5C2 26.4 15 39 15 39z" fill="#b8461f" stroke="#fff" stroke-width="2"/>
+    <circle cx="15" cy="15.5" r="5" fill="#f2b630"/>
+  </svg>`,
+  iconSize: [30, 40], iconAnchor: [15, 39], popupAnchor: [0, -34],
 })
 
 const userIcon = new L.DivIcon({
   className: '',
   html: `<div style="
     width:18px; height:18px;
-    background:#2563eb; border:3px solid white;
-    border-radius:50%; box-shadow:0 0 0 4px rgba(37,99,235,0.25);
+    background:#0284c7; border:3px solid white;
+    border-radius:50%; box-shadow:0 0 0 4px rgba(2,132,199,0.25);
   "></div>`,
   iconSize: [18, 18], iconAnchor: [9, 9],
 })
@@ -82,7 +86,7 @@ export default function ShopsMap() {
         setUserPos(coords)
         setMapCenter(coords)
         setGeoLoading(false)
-        toast.success('Position trouvée ! Les boutiques sont triées par proximité.', { icon: '📍' })
+        toast.success('Position trouvée ! Les boutiques sont triées par proximité.', { icon: <MapPin className="w-4 h-4 text-brand-600" /> })
       },
       (err) => {
         setGeoLoading(false)
@@ -110,16 +114,16 @@ export default function ShopsMap() {
     .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity))
 
   return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="min-h-screen bg-paper-50">
       <Navbar />
       <div className="page-container">
 
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
-            <p className="text-stone-400 text-sm font-display mb-1">🗺️ Exploration</p>
-            <h1 className="font-display font-black text-3xl text-stone-900">Carte des boutiques</h1>
-            <p className="text-stone-400 text-sm mt-1">🇧🇫 Partout au Burkina Faso</p>
+            <p className="eyebrow mb-3"><Compass className="w-3.5 h-3.5" /> Exploration</p>
+            <h1 className="page-title">Carte des boutiques</h1>
+            <p className="text-stone-500 text-sm mt-2 flex items-center gap-2"><BFFlag className="w-4 h-3" /> Partout au Burkina Faso</p>
           </div>
           <button
             onClick={locateMe}
@@ -169,7 +173,7 @@ export default function ShopsMap() {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Map */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl overflow-hidden shadow-glass border border-stone-200" style={{ height: '500px' }}>
+            <div className="rounded-2xl overflow-hidden shadow-soft border border-stone-200" style={{ height: '500px' }}>
               {!loading && (
                 <MapContainer
                   {...(shops.length > 0
@@ -195,10 +199,10 @@ export default function ShopsMap() {
                       <Popup>
                         <div className="min-w-[190px]">
                           <p className="font-bold text-stone-900 mb-0.5">{shop.name}</p>
-                          <p className="text-xs text-forest-700 font-medium mb-1">{shop.category}</p>
+                          <p className="text-xs text-brand-700 font-medium mb-1">{shop.category}</p>
                           {shop.distance !== null && (
                             <p className="text-xs text-blue-600 font-semibold mb-1">
-                              📍 {formatDist(shop.distance)}
+                              <MapPin className="w-3 h-3 inline -mt-0.5 mr-0.5" />{formatDist(shop.distance)}
                             </p>
                           )}
                           {shop.address && (
@@ -208,9 +212,9 @@ export default function ShopsMap() {
                           )}
                           <Link
                             to={`/client/shop/${shop.id}`}
-                            className="inline-flex items-center gap-1 bg-forest-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-forest-700 transition-colors font-semibold"
+                            className="inline-flex items-center gap-1 bg-brand-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-brand-700 transition-colors font-semibold"
                           >
-                            Voir la boutique →
+                            Voir la boutique <ArrowRight className="w-3 h-3 inline -mt-0.5" />
                           </Link>
                         </div>
                       </Popup>
@@ -221,7 +225,7 @@ export default function ShopsMap() {
                   {userPos && (
                     <Marker position={userPos} icon={userIcon}>
                       <Popup>
-                        <p className="font-semibold text-blue-700 text-sm">📍 Vous êtes ici</p>
+                        <p className="font-semibold text-sky-700 text-sm flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> Vous êtes ici</p>
                       </Popup>
                     </Marker>
                   )}
@@ -256,8 +260,8 @@ export default function ShopsMap() {
                   onClick={() => { setSelected(shop); setMapCenter([shop.latitude, shop.longitude]) }}
                   className={`cursor-pointer rounded-xl3 transition-all ${
                     selected?.id === shop.id
-                      ? 'ring-2 ring-forest-500 shadow-forest'
-                      : 'hover:shadow-glass'
+                      ? 'ring-2 ring-brand-500'
+                      : 'hover:shadow-soft'
                   }`}
                 >
                   <ShopCard shop={shop} />

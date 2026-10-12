@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 const ROLE_BADGE = {
   admin:    'bg-stone-100 text-stone-700 border-stone-200',
   merchant: 'bg-blue-50 text-blue-700 border-blue-100',
-  client:   'bg-forest-50 text-forest-700 border-forest-100',
+  client:   'bg-brand-50 text-brand-700 border-brand-100',
 }
 const ROLE_LABEL = { admin: 'Admin', merchant: 'Commerçant', client: 'Client' }
 
@@ -71,7 +71,7 @@ export default function AdminDashboard() {
         <Panel
           title="Boutiques en attente de validation"
           action={
-            <Link to="/admin/shops" className="text-xs font-semibold text-forest-700 hover:text-forest-800 flex items-center gap-1">
+            <Link to="/admin/shops" className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1">
               Tout voir <ArrowUpRight className="w-3 h-3" />
             </Link>
           }
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
             </div>
           ) : pendingShops.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <CheckCircle2 className="w-8 h-8 text-forest-500 mx-auto mb-2" />
+              <CheckCircle2 className="w-8 h-8 text-brand-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-stone-600">Aucune validation en attente</p>
               <p className="text-xs text-stone-400 mt-0.5">Toutes les demandes ont été traitées.</p>
             </div>
@@ -115,7 +115,7 @@ export default function AdminDashboard() {
         <Panel
           title="Derniers utilisateurs inscrits"
           action={
-            <Link to="/admin/users" className="text-xs font-semibold text-forest-700 hover:text-forest-800 flex items-center gap-1">
+            <Link to="/admin/users" className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1">
               Tout voir <ArrowUpRight className="w-3 h-3" />
             </Link>
           }

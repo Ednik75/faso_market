@@ -102,11 +102,11 @@ app.use((err, req, res, next) => {
 initDb()
   .then(() => {
     app.listen(PORT, () => {
-      console.log(`\n🚀 Market BF API démarrée sur http://localhost:${PORT}`);
-      console.log(`📊 Health check: http://localhost:${PORT}/api/health\n`);
+      console.log(`\n[OK] Market BF API démarrée sur http://localhost:${PORT}`);
+      console.log(`     Health check: http://localhost:${PORT}/api/health\n`);
     });
   })
   .catch((err) => {
-    console.error('❌ Impossible d\'initialiser la base de données :', err.message);
+    console.error('[ERREUR] Impossible d\'initialiser la base de données :', err.message);
     process.exit(1);
   });

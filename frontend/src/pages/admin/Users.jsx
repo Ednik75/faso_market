@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 const ROLE = {
   admin:    { label: 'Admin',      cls: 'bg-stone-100 text-stone-700 border-stone-200',  avatar: 'bg-stone-900 text-white' },
   merchant: { label: 'Commerçant', cls: 'bg-blue-50 text-blue-700 border-blue-100',      avatar: 'bg-blue-100 text-blue-700' },
-  client:   { label: 'Client',     cls: 'bg-forest-50 text-forest-700 border-forest-100', avatar: 'bg-forest-100 text-forest-700' },
+  client:   { label: 'Client',     cls: 'bg-brand-50 text-brand-700 border-brand-100', avatar: 'bg-brand-100 text-brand-700' },
 }
 
 export default function AdminUsers() {

@@ -19,4 +19,5 @@ backend/public/
 # Divers
 *.log
 .DS_Store
-.claude/
+.claude/*
+!.claude/skills/

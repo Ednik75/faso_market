@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 
 const SHOP_STATUS = {
-  active:   { label: 'Boutique active', dot: 'bg-forest-500', cls: 'bg-forest-50 text-forest-700 border-forest-200' },
+  active:   { label: 'Boutique active', dot: 'bg-emerald-500', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   pending:  { label: 'En attente de validation', dot: 'bg-amber-500', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
   rejected: { label: 'Boutique rejetée', dot: 'bg-red-500', cls: 'bg-red-50 text-red-700 border-red-200' },
 }
@@ -46,7 +46,7 @@ export default function MerchantDashboard() {
       subtitle={shop ? `${shop.name} — vue d'ensemble de votre activité` : 'Vue d\'ensemble de votre activité'}
       actions={
         !loading && !shop ? (
-          <Link to="/merchant/profile" className="flex items-center gap-2 text-sm font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-4 py-2 transition-colors">
+          <Link to="/merchant/profile" className="flex items-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-2 transition-colors">
             <Plus className="w-4 h-4" /> Créer ma boutique
           </Link>
         ) : shopStatus && <StatusBadge {...shopStatus} />
@@ -59,7 +59,7 @@ export default function MerchantDashboard() {
           <Store className="w-8 h-8 text-stone-300 mx-auto mb-3" />
           <p className="text-sm font-medium text-stone-600 mb-1">Vous n'avez pas encore de boutique</p>
           <p className="text-xs text-stone-400 mb-5">Créez votre boutique pour commencer à vendre sur Market BF.</p>
-          <Link to="/merchant/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-4 py-2 transition-colors">
+          <Link to="/merchant/profile" className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-2 transition-colors">
             <Plus className="w-4 h-4" /> Créer ma boutique
           </Link>
         </div>
@@ -90,7 +90,7 @@ export default function MerchantDashboard() {
           className="xl:col-span-2"
           title="Commandes récentes"
           action={
-            <Link to="/merchant/orders" className="text-xs font-semibold text-forest-700 hover:text-forest-800 flex items-center gap-1">
+            <Link to="/merchant/orders" className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1">
               Tout voir <ArrowUpRight className="w-3 h-3" />
             </Link>
           }
@@ -131,7 +131,7 @@ export default function MerchantDashboard() {
         <Panel
           title="Alertes de stock"
           action={
-            <Link to="/merchant/stock" className="text-xs font-semibold text-forest-700 hover:text-forest-800 flex items-center gap-1">
+            <Link to="/merchant/stock" className="text-xs font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1">
               Gérer <ArrowUpRight className="w-3 h-3" />
             </Link>
           }
@@ -142,7 +142,7 @@ export default function MerchantDashboard() {
             </div>
           ) : alerts.length === 0 ? (
             <div className="px-5 py-10 text-center">
-              <CheckCircle2 className="w-8 h-8 text-forest-500 mx-auto mb-2" />
+              <CheckCircle2 className="w-8 h-8 text-brand-500 mx-auto mb-2" />
               <p className="text-sm font-medium text-stone-600">Stock sous contrôle</p>
               <p className="text-xs text-stone-400 mt-0.5">Aucun produit sous son seuil d'alerte.</p>
             </div>

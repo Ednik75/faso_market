@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import ProductCard from '../../components/ProductCard'
 import api from '../../api/axios'
-import { Search, SlidersHorizontal, X, Package } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Package, ShoppingBag } from 'lucide-react'
 
 const CATEGORIES = ['Alimentation', 'Céréales', 'Huiles', 'Boissons', 'Mode & Vêtements', 'Robes', 'Chaussures', 'Accessoires', 'Électronique']
 
@@ -39,14 +39,14 @@ export default function SearchProducts() {
   const hasFilters = category || minPrice || maxPrice
 
   return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="min-h-screen bg-paper-50">
       <Navbar />
       <div className="page-container">
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-stone-400 text-sm font-display mb-1">🛒 Marketplace</p>
-          <h1 className="font-display font-black text-3xl text-stone-900">Recherche de produits</h1>
+          <p className="eyebrow mb-3"><ShoppingBag className="w-3.5 h-3.5" /> Marketplace</p>
+          <h1 className="page-title">Recherche de produits</h1>
         </div>
 
         {/* Search bar */}
@@ -66,13 +66,13 @@ export default function SearchProducts() {
             onClick={() => setShowFilters(!showFilters)}
             className={`btn-md flex items-center gap-2 px-4 border-2 rounded-xl font-semibold transition-all ${
               showFilters || hasFilters
-                ? 'border-forest-500 bg-forest-50 text-forest-700'
+                ? 'border-brand-500 bg-brand-50 text-brand-700'
                 : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
             }`}
           >
             <SlidersHorizontal className="w-4 h-4" />
             <span className="hidden sm:inline">Filtres</span>
-            {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-forest-500" />}
+            {hasFilters && <span className="w-1.5 h-1.5 rounded-full bg-brand-500" />}
           </button>
         </form>
 
@@ -80,9 +80,9 @@ export default function SearchProducts() {
         {showFilters && (
           <div className="card mb-5 animate-fade-up">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-display font-bold text-stone-900">Filtres avancés</h3>
+              <h3 className="font-display font-medium text-stone-900">Filtres avancés</h3>
               {hasFilters && (
-                <button onClick={clearFilters} className="text-sm text-crimson-500 hover:text-crimson-700 font-semibold flex items-center gap-1">
+                <button onClick={clearFilters} className="text-sm text-danger-500 hover:text-danger-700 font-semibold flex items-center gap-1">
                   <X className="w-3.5 h-3.5" /> Réinitialiser
                 </button>
               )}
@@ -117,19 +117,19 @@ export default function SearchProducts() {
           <div className="flex flex-wrap gap-2 mb-4">
             {category && (
               <button onClick={() => setCategory('')}
-                className="flex items-center gap-1.5 px-3 py-1 bg-forest-100 text-forest-700 rounded-full text-xs font-semibold hover:bg-forest-200 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1 bg-brand-100 text-brand-700 rounded-full text-xs font-semibold hover:bg-brand-200 transition-colors">
                 {category} <X className="w-3 h-3" />
               </button>
             )}
             {minPrice && (
               <button onClick={() => setMinPrice('')}
-                className="flex items-center gap-1.5 px-3 py-1 bg-gold-100 text-gold-700 rounded-full text-xs font-semibold hover:bg-gold-200 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1 bg-accent-100 text-accent-700 rounded-full text-xs font-semibold hover:bg-accent-200 transition-colors">
                 Min: {parseInt(minPrice).toLocaleString('fr-FR')} F <X className="w-3 h-3" />
               </button>
             )}
             {maxPrice && (
               <button onClick={() => setMaxPrice('')}
-                className="flex items-center gap-1.5 px-3 py-1 bg-gold-100 text-gold-700 rounded-full text-xs font-semibold hover:bg-gold-200 transition-colors">
+                className="flex items-center gap-1.5 px-3 py-1 bg-accent-100 text-accent-700 rounded-full text-xs font-semibold hover:bg-accent-200 transition-colors">
                 Max: {parseInt(maxPrice).toLocaleString('fr-FR')} F <X className="w-3 h-3" />
               </button>
             )}
@@ -149,7 +149,7 @@ export default function SearchProducts() {
         ) : products.length === 0 ? (
           <div className="card text-center py-20">
             <Package className="w-14 h-14 mx-auto text-stone-200 mb-4" />
-            <p className="font-display font-bold text-stone-500 text-lg mb-1">Aucun produit trouvé</p>
+            <p className="font-display font-medium text-stone-500 text-lg mb-1">Aucun produit trouvé</p>
             <p className="text-stone-400 text-sm">Essayez d'autres mots-clés ou supprimez les filtres</p>
           </div>
         ) : (

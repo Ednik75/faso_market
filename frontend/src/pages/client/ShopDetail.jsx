@@ -46,7 +46,7 @@ export default function ShopDetail() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="min-h-screen bg-paper-50">
       <Navbar />
       <div className="page-container">
         <div className="card h-48 animate-pulse bg-stone-50 mb-6" />
@@ -59,13 +59,13 @@ export default function ShopDetail() {
   if (!shop) return null
 
   return (
-    <div className="min-h-screen bg-sand-50">
+    <div className="min-h-screen bg-paper-50">
       <Navbar />
       <div className="page-container max-w-5xl mx-auto">
 
         {/* Shop header */}
-        <div className="relative overflow-hidden rounded-xl3 bg-gradient-forest p-8 mb-8">
-          <div className="absolute inset-0 bg-pattern-geo opacity-20" />
+        <div className="relative overflow-hidden rounded-xl3 bg-brand-600 p-8 mb-8">
+          <div className="absolute inset-0 bg-weave opacity-20" />
           <div className="relative z-10 flex items-start gap-5">
             <div className="w-20 h-20 bg-white/10 backdrop-blur-sm rounded-2xl border border-white/20 flex items-center justify-center shrink-0">
               <Store className="w-10 h-10 text-white" />
@@ -73,7 +73,7 @@ export default function ShopDetail() {
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between flex-wrap gap-3">
                 <div>
-                  <h1 className="font-display font-black text-3xl text-white mb-2">{shop.name}</h1>
+                  <h1 className="font-display font-medium text-3xl text-white mb-2">{shop.name}</h1>
                   <span className="inline-block bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
                     {shop.category}
                   </span>
@@ -100,10 +100,10 @@ export default function ShopDetail() {
         {/* Products */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-forest-50 rounded-xl flex items-center justify-center">
-              <Package className="w-4 h-4 text-forest-600" />
+            <div className="w-8 h-8 bg-brand-50 rounded-xl flex items-center justify-center">
+              <Package className="w-4 h-4 text-brand-600" />
             </div>
-            <h2 className="font-display font-bold text-stone-900 text-xl">
+            <h2 className="font-display font-medium text-stone-900 text-xl">
               Produits <span className="text-stone-400 font-normal text-base">({shop.products?.length || 0})</span>
             </h2>
           </div>
@@ -122,10 +122,10 @@ export default function ShopDetail() {
         {/* Reviews */}
         <div>
           <div className="flex items-center gap-3 mb-5">
-            <div className="w-8 h-8 bg-gold-50 rounded-xl flex items-center justify-center">
-              <Star className="w-4 h-4 text-gold-600" />
+            <div className="w-8 h-8 bg-accent-50 rounded-xl flex items-center justify-center">
+              <Star className="w-4 h-4 text-accent-600" />
             </div>
-            <h2 className="font-display font-bold text-stone-900 text-xl">
+            <h2 className="font-display font-medium text-stone-900 text-xl">
               Avis clients <span className="text-stone-400 font-normal text-base">({reviews.length})</span>
             </h2>
           </div>
@@ -133,10 +133,10 @@ export default function ShopDetail() {
           {user?.role === 'client' && (
             <div className="card mb-5">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 bg-gold-50 rounded-xl flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-gold-600" />
+                <div className="w-8 h-8 bg-accent-50 rounded-xl flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-accent-600" />
                 </div>
-                <h3 className="font-display font-bold text-stone-900">Laisser un avis</h3>
+                <h3 className="font-display font-medium text-stone-900">Laisser un avis</h3>
               </div>
               <form onSubmit={submitReview}>
                 <div className="mb-4">
@@ -150,7 +150,7 @@ export default function ShopDetail() {
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
-                <button type="submit" disabled={submitting} className="btn-gold btn-md flex items-center gap-2">
+                <button type="submit" disabled={submitting} className="btn-accent btn-md flex items-center gap-2">
                   <Send className="w-4 h-4" />
                   {submitting ? 'Publication…' : 'Publier l\'avis'}
                 </button>
@@ -163,12 +163,12 @@ export default function ShopDetail() {
               <div key={r.id} className="card">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-forest-100 rounded-full flex items-center justify-center">
-                      <span className="text-forest-700 font-bold text-sm font-display">
+                    <div className="w-9 h-9 bg-brand-100 rounded-full flex items-center justify-center">
+                      <span className="text-brand-700 font-bold text-sm">
                         {r.client_name?.[0]?.toUpperCase()}
                       </span>
                     </div>
-                    <span className="font-display font-semibold text-stone-900 text-sm">{r.client_name}</span>
+                    <span className=" font-semibold text-stone-900 text-sm">{r.client_name}</span>
                   </div>
                   <StarRating value={r.rating} size="sm" />
                 </div>

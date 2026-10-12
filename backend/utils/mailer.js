@@ -28,13 +28,13 @@ async function sendMail({ to, subject, html, text }) {
   try {
     const info = await getTransporter().sendMail({ from: FROM, to, subject, html, text });
     if (!process.env.SMTP_HOST) {
-      console.log(`📧 [DEV] Email simulé → ${to} | ${subject}`);
+      console.log(`[DEV] Email simulé → ${to} | ${subject}`);
       if (text) console.log(text.split('\n').map((l) => `   ${l}`).join('\n'));
     }
     return info;
   } catch (err) {
     // L'échec d'un email ne doit jamais bloquer une opération métier
-    console.error(`❌ Échec envoi email à ${to}:`, err.message);
+    console.error(`[ERREUR] Échec envoi email à ${to}:`, err.message);
     return null;
   }
 }
@@ -46,12 +46,12 @@ function layout(title, body) {
 <html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f4f1ea;font-family:'Segoe UI',Arial,sans-serif;color:#292524;">
   <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
-    <div style="background:linear-gradient(135deg,#0a4330,#0d8259);border-radius:16px 16px 0 0;padding:28px 32px;">
-      <span style="font-size:22px;font-weight:800;color:#ffffff;">Market</span><span style="font-size:22px;font-weight:800;color:#fbbf24;">BF</span>
-      <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Marketplace du Burkina Faso 🇧🇫</p>
+    <div style="background:#1c1917;border-radius:16px 16px 0 0;padding:28px 32px;">
+      <span style="font-size:22px;font-weight:800;color:#ffffff;">Market</span><span style="font-size:22px;font-weight:800;color:#dc7d51;">BF</span>
+      <p style="margin:6px 0 0;color:rgba(255,255,255,0.75);font-size:13px;">Marketplace du Burkina Faso</p>
     </div>
     <div style="background:#ffffff;padding:32px;border-radius:0 0 16px 16px;border:1px solid #e7e5e4;border-top:none;">
-      <h1 style="margin:0 0 16px;font-size:20px;color:#0a4330;">${title}</h1>
+      <h1 style="margin:0 0 16px;font-size:20px;color:#1c1917;">${title}</h1>
       ${body}
     </div>
     <p style="text-align:center;color:#a8a29e;font-size:12px;margin-top:20px;">
@@ -80,10 +80,10 @@ function sendPasswordResetEmail(to, name, token) {
     <p style="font-size:14px;line-height:1.6;">Vous avez demandé la réinitialisation de votre mot de passe Market BF.
     Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe. Ce lien est valable <strong>1 heure</strong>.</p>
     <div style="text-align:center;margin:28px 0;">
-      <a href="${link}" style="display:inline-block;background:linear-gradient(135deg,#0d8259,#0b6848);color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:14px;">Réinitialiser mon mot de passe</a>
+      <a href="${link}" style="display:inline-block;background:#b8461f;color:#fff;text-decoration:none;padding:14px 32px;border-radius:999px;font-weight:700;font-size:14px;">Réinitialiser mon mot de passe</a>
     </div>
     <p style="font-size:12px;color:#78716c;line-height:1.6;">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
-    <a href="${link}" style="color:#0d8259;word-break:break-all;">${link}</a></p>
+    <a href="${link}" style="color:#b8461f;word-break:break-all;">${link}</a></p>
     <p style="font-size:12px;color:#78716c;">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email — votre mot de passe restera inchangé.</p>
   `);
   return sendMail({
@@ -119,7 +119,7 @@ function receiptTable(order, items) {
       <tfoot>
         <tr>
           <td colspan="3" style="padding:14px 8px;text-align:right;font-weight:700;font-size:14px;">Total à payer</td>
-          <td style="padding:14px 8px;text-align:right;font-weight:800;font-size:16px;color:#0d8259;">${fcfa(order.total_amount)}</td>
+          <td style="padding:14px 8px;text-align:right;font-weight:800;font-size:16px;color:#b8461f;">${fcfa(order.total_amount)}</td>
         </tr>
       </tfoot>
     </table>
@@ -129,12 +129,12 @@ function receiptTable(order, items) {
       <strong>Boutique :</strong> ${escapeHtml(order.shop_name || '')}${order.shop_address ? ` — ${escapeHtml(order.shop_address)}` : ''}<br>
       <strong>Mode de paiement :</strong> ${PAYMENT_LABELS[order.payment_method] || order.payment_method}${order.delivery_address ? `<br>
       <strong>Livraison :</strong> ${escapeHtml(order.delivery_address)}` : ''}${order.delivery_latitude != null && order.delivery_longitude != null ? `<br>
-      <strong>Position GPS :</strong> <a href="https://www.google.com/maps?q=${order.delivery_latitude},${order.delivery_longitude}" style="color:#0d8259;">voir sur la carte</a>` : ''}
+      <strong>Position GPS :</strong> <a href="https://www.google.com/maps?q=${order.delivery_latitude},${order.delivery_longitude}" style="color:#b8461f;">voir sur la carte</a>` : ''}
     </div>`;
 }
 
 function sendOrderReceiptEmail(to, clientName, order, items) {
-  const html = layout(`Commande confirmée ✓ — Reçu N° MBF-${String(order.id).padStart(6, '0')}`, `
+  const html = layout(`Commande confirmée — Reçu N° MBF-${String(order.id).padStart(6, '0')}`, `
     <p style="font-size:14px;line-height:1.6;">Bonjour <strong>${escapeHtml(clientName)}</strong>,</p>
     <p style="font-size:14px;line-height:1.6;">Merci pour votre commande ! Elle a bien été enregistrée et transmise à la boutique
     <strong>${escapeHtml(order.shop_name || '')}</strong>. Voici votre reçu :</p>
@@ -158,17 +158,17 @@ function sendOrderReceiptEmail(to, clientName, order, items) {
 }
 
 function sendDeliveryConfirmationEmail(to, clientName, order, items) {
-  const html = layout(`Votre commande a été livrée 🎉`, `
+  const html = layout(`Votre commande a été livrée`, `
     <p style="font-size:14px;line-height:1.6;">Bonjour <strong>${escapeHtml(clientName)}</strong>,</p>
     <p style="font-size:14px;line-height:1.6;">Bonne nouvelle ! Votre commande <strong>N° MBF-${String(order.id).padStart(6, '0')}</strong>
-    de la boutique <strong>${escapeHtml(order.shop_name || '')}</strong> a bien été <strong style="color:#0d8259;">livrée</strong>.</p>
+    de la boutique <strong>${escapeHtml(order.shop_name || '')}</strong> a bien été <strong style="color:#b8461f;">livrée</strong>.</p>
     ${receiptTable(order, items)}
     <p style="font-size:13px;line-height:1.6;margin-top:16px;">Votre avis compte ! N'hésitez pas à noter la boutique depuis votre espace client pour aider les autres acheteurs.</p>
-    <p style="font-size:13px;color:#78716c;">Merci de faire confiance à Market BF 🙏</p>
+    <p style="font-size:13px;color:#78716c;">Merci de faire confiance à Market BF.</p>
   `);
   return sendMail({
     to,
-    subject: `Market BF — Commande N° MBF-${String(order.id).padStart(6, '0')} livrée ✓`,
+    subject: `Market BF — Commande N° MBF-${String(order.id).padStart(6, '0')} livrée`,
     html,
     text: `Bonjour ${clientName},\nVotre commande N° MBF-${String(order.id).padStart(6, '0')} (${order.shop_name}) a été livrée.\nTotal : ${fcfa(order.total_amount)}\nMerci de faire confiance à Market BF !`,
   });

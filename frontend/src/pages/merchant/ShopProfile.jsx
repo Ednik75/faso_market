@@ -20,7 +20,7 @@ const CATEGORIES = [
 ]
 
 const STATUS_CONFIG = {
-  active:   { icon: CheckCircle2, label: 'Boutique active', desc: 'Votre boutique est visible par les clients sur Market BF.', cls: 'bg-forest-50 border-forest-200 text-forest-800', ic: 'text-forest-600' },
+  active:   { icon: CheckCircle2, label: 'Boutique active', desc: 'Votre boutique est visible par les clients sur Market BF.', cls: 'bg-brand-50 border-brand-200 text-brand-800', ic: 'text-brand-600' },
   pending:  { icon: Clock,        label: 'En attente de validation', desc: 'Un administrateur examine votre demande. Vous serez notifié dès l\'activation.', cls: 'bg-amber-50 border-amber-200 text-amber-900', ic: 'text-amber-600' },
   rejected: { icon: XCircle,      label: 'Boutique rejetée', desc: 'Contactez le support Market BF pour en connaître la raison.', cls: 'bg-red-50 border-red-200 text-red-800', ic: 'text-red-600' },
 }
@@ -45,7 +45,7 @@ export default function ShopProfile() {
     try {
       const pos = await getCurrentPosition()
       setForm(f => ({ ...f, latitude: pos.latitude, longitude: pos.longitude }))
-      toast.success('Coordonnées GPS de la boutique mises à jour ! 📍')
+      toast.success('Coordonnées GPS de la boutique mises à jour !')
     } catch (err) {
       toast.error(err.message)
     } finally { setLocating(false) }
@@ -162,7 +162,7 @@ export default function ShopProfile() {
                       key={q}
                       type="button"
                       onClick={() => update('address', `${q}, Ouagadougou`)}
-                      className="text-xs bg-stone-100 hover:bg-forest-50 text-stone-600 hover:text-forest-700 px-2.5 py-1 rounded-md transition-colors font-medium border border-transparent hover:border-forest-200"
+                      className="text-xs bg-stone-100 hover:bg-brand-50 text-stone-600 hover:text-brand-700 px-2.5 py-1 rounded-md transition-colors font-medium border border-transparent hover:border-brand-200"
                     >
                       {q}
                     </button>
@@ -175,7 +175,7 @@ export default function ShopProfile() {
                       key={c}
                       type="button"
                       onClick={() => update('address', c)}
-                      className="text-xs bg-stone-100 hover:bg-forest-50 text-stone-600 hover:text-forest-700 px-2.5 py-1 rounded-md transition-colors font-medium border border-transparent hover:border-forest-200"
+                      className="text-xs bg-stone-100 hover:bg-brand-50 text-stone-600 hover:text-brand-700 px-2.5 py-1 rounded-md transition-colors font-medium border border-transparent hover:border-brand-200"
                     >
                       {c}
                     </button>
@@ -190,7 +190,7 @@ export default function ShopProfile() {
                     type="button"
                     onClick={useMyPosition}
                     disabled={locating}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-forest-700 hover:text-forest-800 bg-forest-50 hover:bg-forest-100 border border-forest-200 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-60"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-60"
                   >
                     {locating
                       ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Localisation…</>
@@ -236,7 +236,7 @@ export default function ShopProfile() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-forest-600 hover:bg-forest-700 rounded-lg px-4 py-3 transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg px-4 py-3 transition-colors disabled:opacity-50"
               >
                 {saving
                   ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Sauvegarde…</>

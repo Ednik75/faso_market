@@ -4,12 +4,12 @@ const crypto = require('crypto');
 let secret = process.env.JWT_SECRET;
 if (!secret || secret.length < 32) {
   if (process.env.NODE_ENV === 'production') {
-    console.error('❌ FATAL: JWT_SECRET manquant ou trop court (32 caractères minimum) — définissez-le dans .env');
+    console.error('[FATAL]: JWT_SECRET manquant ou trop court (32 caractères minimum) — définissez-le dans .env');
     process.exit(1);
   }
   // En développement uniquement : secret aléatoire par démarrage
   secret = crypto.randomBytes(48).toString('hex');
-  console.warn('⚠️  JWT_SECRET absent ou faible : secret temporaire généré (les sessions expireront au redémarrage)');
+  console.warn('[ATTENTION] JWT_SECRET absent ou faible : secret temporaire généré (les sessions expireront au redémarrage)');
 }
 const JWT_SECRET = secret;
 
