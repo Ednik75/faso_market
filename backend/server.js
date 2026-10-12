@@ -18,6 +18,9 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }, // autorise l'affichage des images /uploads depuis le frontend
   // CSP désactivée : le frontend servi par l'API charge Google Fonts, Google Sign-In, OpenStreetMap…
   contentSecurityPolicy: false,
+  // OpenStreetMap bloque les tuiles demandées sans en-tête Referer (« Access blocked »).
+  // helmet impose « no-referrer » par défaut : on envoie au moins l'origine du site.
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
 }));
 
 // CORS : origines autorisées uniquement (+ URL publique fournie par l'hébergeur, ex: Render)
